@@ -1,23 +1,35 @@
+import os
 import random
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+WORDS_PATH = os.path.join(BASE_DIR, "words.txt")
+
+DIFFICULTIES = {
+    "easy":      {"word_length": 4, "max_turns": 10},
+    "normal":    {"word_length": 5, "max_turns": 8},
+    "difficult": {"word_length": 6, "max_turns": 7},
+}
 class WordGame:
     
-    def __init__(self):
-        self.difficulty="easy"
-        self.word_length=4
+    def __init__(self,difficulty):
         self.word_list=[]
-        self.secret_word=""
-        self.max_turns=10
-        self.attempts_left=10
-        self.history=[]
-        self.is_game_over=False
-        self.is_win=False
+        self.secret_word = ""
+        self.set_difficulty(difficulty)
+
+    def set_difficulty(self, difficulty):
+        if difficulty not in DIFFICULTIES:
+            raise ValueError(f"Độ khó không hợp lệ: {difficulty}")
+        config = DIFFICULTIES[difficulty]
+        self.difficulty = difficulty
+        self.word_length = config["word_length"]
+        self.max_turns = config["max_turns"]
         self.load_words()
-        self.generate_secret()
+        self.reset()        
 
     def load_words(self):
+        self.word_list = []
         try:
-            with open("data/words.txt", "r") as file:
+            with open(WORDS_PATH, "r", encoding="utf-8") as file:
                 for line in file:
                     word = line.strip()
                     if len(word)==self.word_length and len(set(word))==self.word_length:
@@ -31,7 +43,7 @@ class WordGame:
     def validate_guess(self,guess):
         guess=guess.upper()
         if len(guess)!=self.word_length:
-            return False,f"Từ đoán phải có {self.word.length} chữ cái."
+            return False,f"Từ đoán phải có {self.word_length} chữ cái."
         if not guess.isalpha():
             return False,f"Từ đoán chỉ được chứa chữ cái."
         if len(set(guess))!=len(guess):
@@ -39,6 +51,8 @@ class WordGame:
         return True,""
 
     def check_guess(self,guess):
+        if self.is_game_over:
+            return False, "Ván chơi đã kết thúc."
         guess=guess.upper()
         valid,message=self.validate_guess(guess)
         if not valid:
@@ -76,7 +90,6 @@ class WordGame:
         self.attempts_left=self.max_turns
         self.history=[]
         self.is_game_over=False
-        self.is_win=False
 
 
 def print_history(game):
@@ -87,12 +100,23 @@ def print_history(game):
     for n,h in enumerate(game.history,start=1):
         print(f"{n}. {h['guess']} -> Bulls: {h['bulls']}, Cows: {h['cows']}")
 
+def choose_difficulty():
+    while True:
+        choice = input("Chọn độ khó (easy / normal / difficult): ").strip().lower()
+        if choice in DIFFICULTIES:
+            return choice
+        print("Lựa chọn không hợp lệ")   
+
+def print_intro(game):
+    print(f"Chế độ: {game.difficulty}")
+    print(f"Đoán từ có {game.word_length} chữ cái, không lặp chữ")
+    print(f"Bạn có {game.max_turns} lượt đoán. Gõ 'history' để xem lại các lượt đã đoán, gõ 'quit' để thoát.\n")
+
 
 if __name__=="__main__":
-    game=WordGame()
     print("   Cows and Bulls   ")
-    print(f"Đoán từ có {game.word_length} chữ cái,không lặp chữ")
-    print(f"Bạn có {game.max_turns} lượt đoán. Gõ 'history' để xem lại các lượt đã đoán, gõ 'quit' để thoát.\n")
+    game = WordGame(choose_difficulty())
+    print_intro(game)
     while True:
         guess=input(f"[Còn {game.attempts_left} lượt đoán] Nhập từ đoán: ").upper()
         if guess=='QUIT':
@@ -100,6 +124,7 @@ if __name__=="__main__":
             break
         if guess=='HISTORY':
             print_history(game)
+            continue
         result=game.check_guess(guess)
         if isinstance(result,tuple):
             print(result[1])
@@ -112,13 +137,17 @@ if __name__=="__main__":
             print(f"Bulls: {result['bulls']}, Cows: {result['cows']}")
         if game.is_game_over:
             while True:
-                again=input("Gõ 'y' để chơi lại ván mới, 'n' để hết thúc, 'history' để xem lại các lần đoán: ").lower()
+                again=input("'y': chơi lại | 'm': đổi độ khó | 'n': kết thúc | 'history': xem lịch sử: ").strip().lower()
                 if again=="history":
                     print_history(game)
                     continue
-                break
+                if again in("y", "m", "n"):
+                    break
             if again=="y":
                 game.reset()
+            elif again=="m":
+                game.set_difficulty(choose_difficulty())
+                print_intro(game) 
             else:
                 print("Kết thúc trò chơi")
                 break
