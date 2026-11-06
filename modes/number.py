@@ -52,29 +52,40 @@ class NumberGame:
 
     def validate_guess(self, guess):
         if not isinstance(guess, str):
-            return False, "Vui lòng nhập chuỗi ký tự."
+            return False, "Please enter a valid string."
 
         if not guess.isdigit():
-            return False, "Dự đoán chỉ được chứa các chữ số."
+            return False, "Your guess must contain digits only."
 
         if len(guess) != self.length:
-            return False, f"Dự đoán phải có độ dài {self.length} chữ số."
+            return False, (
+                f"Your guess must contain exactly "
+                f"{self.length} digits."
+            )
 
         if len(set(guess)) != len(guess):
-            return False, "Dự đoán không được có chữ số lặp lại."
+            return False, "Digits cannot be repeated."
 
-        return True, "Hợp lệ"
+        return True, "Valid"
 
     def check_guess(self, guess):
         if self.game_over:
-            return {"status": "error", "message": "Game đã kết thúc. Hãy bắt đầu ván mới."}
+            return {
+                "status": "error",
+                "message": "The game is over. Please start a new game."
+            }
 
         is_valid, msg = self.validate_guess(guess)
+
         if not is_valid:
-            return {"status": "error", "message": msg}
+            return {
+                "status": "error",
+                "message": msg
+            }
 
         bulls = 0
         cows = 0
+
         for i in range(self.length):
             if guess[i] == self.secret[i]:
                 bulls += 1
@@ -83,7 +94,8 @@ class NumberGame:
 
         self.turns_left -= 1
 
-        is_correct = (bulls == self.length)
+        is_correct = bulls == self.length
+
         if is_correct:
             self.won = True
             self.game_over = True
@@ -110,21 +122,30 @@ class NumberGame:
 if __name__ == "__main__":
     game = NumberGame(difficulty="Easy")
 
-    print(f"Game đã bắt đầu! Chế độ: {game.difficulty}")
-    print(f"Bạn cần đoán chuỗi {game.length} chữ số không trùng lặp. Bạn có {game.max_turns} lượt.")
+    print(f"Game started! Difficulty: {game.difficulty}")
+    print(
+        f"Guess a {game.length}-digit number with no repeated digits. "
+        f"You have {game.max_turns} attempts."
+    )
 
     while not game.game_over:
-        user_input = input(f"\nNhập số dự đoán của bạn (còn {game.turns_left} lượt): ")
+        user_input = input(
+            f"\nEnter your guess "
+            f"({game.turns_left} attempts left): "
+        )
 
         response = game.check_guess(user_input)
 
         if response["status"] == "error":
-            print(f"Lỗi: {response['message']}")
+            print(f"Error: {response['message']}")
             continue
 
-        print(f"Kết quả: {response['bulls']} Bulls, {response['cows']} Cows")
+        print(
+            f"Result: {response['bulls']} Bulls, "
+            f"{response['cows']} Cows"
+        )
 
     if game.won:
-        print("YOU WIN! Chúc mừng, bạn đã thắng.")
+        print("YOU WIN! Congratulations!")
     else:
-        print(f"GAME OVER! Đáp án bí mật là {game.secret}.")
+        print(f"GAME OVER! The secret number was {game.secret}.")

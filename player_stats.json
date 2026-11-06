@@ -1,0 +1,88 @@
+{
+    "total_games": 9,
+    "wins": 1,
+    "losses": 8,
+    "total_score": 120,
+    "best_score": 120,
+    "current_streak": 0,
+    "best_streak": 0,
+    "number": {
+        "games": 9,
+        "wins": 1,
+        "losses": 8,
+        "score": 120,
+        "best_score": 120
+    },
+    "word": {
+        "games": 0,
+        "wins": 0,
+        "losses": 0,
+        "score": 0,
+        "best_score": 0
+    },
+    "history": [
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-10-16 11:10"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-10-16 11:13"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-10-16 11:15"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-10-16 11:17"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-10-16 11:28"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Win",
+            "score": 120,
+            "date": "2026-10-17 14:02"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-11-06 16:25"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-11-06 16:27"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-11-06 16:29"
+        }
+    ]
+}
