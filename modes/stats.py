@@ -1,13 +1,18 @@
 
 import json
+import os
+import requests
+import threading
 from pathlib import Path
 from datetime import datetime
 
+SERVER_URL = "http://127.0.0.1:8000"
 
 class StatsManager:
-    def __init__(self, filename="player_stats.json"):
+    def __init__(self, filename="player_stats.json", player_name = "HoangHiep"):
         # Save the file in the project root directory
         self.file_path = Path(__file__).resolve().parent.parent / filename
+        self.player_name = player_name
         self.data = self._default_data()
         self.load()
 
@@ -82,7 +87,7 @@ class StatsManager:
         except OSError as error:
             print(f"Could not save statistics: {error}")
 
-    def record_result(self, mode, difficulty, won, score):
+    def record_result(self, mode, difficulty, won, score, target="", attempts = 0):
         """Save the result of one completed game."""
         mode = mode.lower()
 
@@ -154,6 +159,14 @@ class StatsManager:
 
         self.save()
 
+        self._send_score_to_server_async(
+            player_name = self.player_name,
+            mode = mode,
+            result = "win" if won else "loss",
+            target = str(target),
+            attempts = int(attempts),
+            score = score
+        )
         return score
 
     def get_summary(self):
@@ -174,7 +187,63 @@ class StatsManager:
             "word": self.data["word"].copy(),
             "history": list(reversed(self.data["history"])),
         }
+    # CAC HAM XU LY KET NOI API
+    def login_server(self, username, password):
+        """Đã thêm: Hàm xử lý Đăng nhập gửi lên FastAPI Server"""
+        try:
+            payload = {"username": username, "password": password}
+            res = requests.post(f"{SERVER_URL}/api/login", json=payload, timeout=3)
+            data = res.json()
+            if data.get("success"):
+                self.player_name = username
+                return True, data.get("message")
+            return False, data.get("message", "Dang nhap thất bại!")
+        except Exception as e:
+            return False, f"Không thể kết nối Server: {e}"
 
+    def register_server(self, username, password):
+        """Đã thêm: Hàm xử lý Đăng ký gửi lên FastAPI Server"""
+        try:
+            payload = {"username": username, "password": password}
+            res = requests.post(f"{SERVER_URL}/api/register", json=payload, timeout=3)
+            data = res.json()
+            if data.get("success"):
+                self.player_name = username
+                return True, data.get("message")
+            return False, data.get("message", "Dang ký thất bại!")
+        except Exception as e:
+            return False, f"Không thể kết nối Server: {e}"
+    def _send_score_to_server_async(self,player_name,mode,result,target,attempts,score):
+        def worker():
+            payload = {
+                "player_name": player_name,
+                "mode": mode,
+                "result": result,
+                "target": target,
+                "attempts": attempts,
+                "score": score
+            }
+            try:
+                res = requests.post(f"{SERVER_URL}/api/submit-score",json = payload, timeout = 3)
+                if res.status_code == 200:
+                    print(f"-> [API] Đã gửi kỷ lục thành công cho {player_name}")
+            except Exception as e:
+                print(f"-> [API] Lỗi khi lấy bảng xếp hạng từ Server: {e}")
+
+        threading.Thread(target = worker, daemon = True).start()
+
+
+    def fetch_global_leaderboard(self, mode = None):
+        url = f"{SERVER_URL}/api/leaderboard"
+        if mode in ["number", "word"]:
+            url += f"?mode={mode}"
+        try:
+            res = requests.get(url, timeout = 3)
+            if res.status_code == 200:
+                return res.json()
+        except Exception as e:
+            print(f"-> [API] Lỗi khi lấy bảng xếp hạng từ Server: {e}")
+        return []                           
 
 # Shared stats manager used by both game modes
 stats_manager = StatsManager()

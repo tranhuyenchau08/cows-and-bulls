@@ -49,12 +49,79 @@ button_font = pygame.font.Font(None, 45)
 # GAME STATE
 # =========================
 
-current_menu = "main"
+current_menu = "login"
 selected_mode = None
-
 number_mode = None
 word_mode = None
 
+
+input_username = ""
+input_password = ""
+active_input = "username"
+auth_message = ""
+auth_mode = "login"
+
+
+username_box = pygame.Rect(350, 220, 300, 50)
+password_box = pygame.Rect(350, 310, 300, 50)
+submit_auth_button = pygame.Rect(350, 400, 300, 55)
+switch_auth_button = pygame.Rect(350, 470, 300, 45)
+
+
+def perform_auth():
+    global current_menu, auth_message
+    if not input_username or not input_password:
+        auth_message = "Vui long nhap day du thong tin!"
+        return
+        
+    if auth_mode == "login":
+        success, msg = stats_manager.login_server(input_username, input_password)
+    else:
+        success, msg = stats_manager.register_server(input_username, input_password)
+        
+    auth_message = msg
+    if success:
+        current_menu = "main"
+
+
+def draw_auth_screen(mouse_pos):
+    screen.fill(BACKGROUND)
+    title_text = "LOGIN" if auth_mode == "login" else "REGISTER"
+    draw_title(title_text, 100)
+
+    input_font = pygame.font.Font(None, 36)
+    label_font = pygame.font.Font(None, 28)
+    msg_font = pygame.font.Font(None, 24)
+
+    # Username Label & Box
+    u_label = label_font.render("Username:", True, TEXT_COLOR)
+    screen.blit(u_label, (350, 195))
+    u_color = (255, 255, 255) if active_input == "username" else (230, 230, 230)
+    pygame.draw.rect(screen, u_color, username_box, border_radius=8)
+    pygame.draw.rect(screen, TEXT_COLOR, username_box, 2, border_radius=8)
+    u_surface = input_font.render(input_username, True, TEXT_COLOR)
+    screen.blit(u_surface, (username_box.x + 10, username_box.y + 12))
+
+    # Password Label & Box
+    p_label = label_font.render("Password:", True, TEXT_COLOR)
+    screen.blit(p_label, (350, 285))
+    p_color = (255, 255, 255) if active_input == "password" else (230, 230, 230)
+    pygame.draw.rect(screen, p_color, password_box, border_radius=8)
+    pygame.draw.rect(screen, TEXT_COLOR, password_box, 2, border_radius=8)
+    p_surface = input_font.render("*" * len(input_password), True, TEXT_COLOR)
+    screen.blit(p_surface, (password_box.x + 10, password_box.y + 12))
+
+    # Error / Success Message
+    if auth_message:
+        msg_color = (200, 50, 50) if "thanh cong" not in auth_message.lower() else (50, 150, 50)
+        msg_surface = msg_font.render(auth_message, True, msg_color)
+        screen.blit(msg_surface, msg_surface.get_rect(center=(WIDTH // 2, 375)))
+
+    btn_text = "SUBMIT LOGIN" if auth_mode == "login" else "SUBMIT REGISTER"
+    switch_text = "Switch to Register" if auth_mode == "login" else "Switch to Login"
+    
+    draw_button(submit_auth_button, btn_text, mouse_pos)
+    draw_button(switch_auth_button, switch_text, mouse_pos)
 # =========================
 # BUTTON FUNCTION
 # =========================
@@ -295,15 +362,9 @@ def draw_leaderboard_screen(mouse_pos):
     screen.fill(BACKGROUND)
     draw_title("LEADERBOARD", 42)
 
-    stats = stats_manager.get_summary()
-    history = stats["history"]
+    leaderboard = stats_manager.fetch_global_leaderboard()
 
-    # Sort games by score, highest first
-    leaderboard = sorted(
-        history,
-        key=lambda game: int(game["score"]),
-        reverse=True
-    )[:5]
+    
 
     card_color = (255, 250, 238)
     muted_color = (125, 115, 98)
@@ -316,10 +377,9 @@ def draw_leaderboard_screen(mouse_pos):
     # Column headings
     headings = [
         ("RANK", 100),
-        ("MODE", 220),
-        ("DIFFICULTY", 400),
-        ("SCORE", 600),
-        ("RESULT", 800),
+        ("PLAYER", 250),
+        ("BEST SCORE", 500),
+        ("TOTAL WINS", 750),
     ]
 
     for heading, x in headings:
@@ -350,27 +410,15 @@ def draw_leaderboard_screen(mouse_pos):
 
             rank_color = gold_color if i == 0 else TEXT_COLOR
 
-            rank_text = row_font.render(
-                f"#{i + 1}", True, rank_color
-            )
-            mode_text = row_font.render(
-                str(game["mode"]).upper(), True, TEXT_COLOR
-            )
-            difficulty_text = row_font.render(
-                str(game["difficulty"]), True, TEXT_COLOR
-            )
-            score_text = row_font.render(
-                str(game["score"]), True, green_color
-            )
-            result_text = row_font.render(
-                str(game["result"]).upper(), True, TEXT_COLOR
-            )
+            rank_text = row_font.render(f"#{i + 1}", True, rank_color)
+            name_text = row_font.render(str(game.get("player_name", "Unknown")), True, TEXT_COLOR)
+            score_text = row_font.render(str(game.get("best_score", 0)), True, green_color)
+            wins_text = row_font.render(str(game.get("wins", 0)), True, TEXT_COLOR)
 
             screen.blit(rank_text, (100, y + 15))
-            screen.blit(mode_text, (220, y + 15))
-            screen.blit(difficulty_text, (400, y + 15))
-            screen.blit(score_text, (600, y + 15))
-            screen.blit(result_text, (800, y + 15))
+            screen.blit(name_text, (250, y + 15))
+            screen.blit(score_text, (500, y + 15))
+            screen.blit(wins_text, (750, y + 15))
 
     draw_button(leaderboard_back_button, "BACK", mouse_pos)
 
@@ -517,6 +565,24 @@ while running:
         # -------------------------
 
         if event.type == pygame.KEYDOWN:
+            # GÕ PHÍM KHI Ở MÀN HÌNH LOGIN / REGISTER
+            if current_menu == "login":
+                if event.key == pygame.K_TAB:
+                    active_input = "password" if active_input == "username" else "username"
+                elif event.key == pygame.K_BACKSPACE:
+                    if active_input == "username":
+                        input_username = input_username[:-1]
+                    else:
+                        input_password = input_password[:-1]
+                elif event.key == pygame.K_RETURN:
+                    perform_auth()
+                else:
+                    if len(event.unicode) > 0 and event.unicode.isprintable():
+                        if active_input == "username" and len(input_username) < 15:
+                            input_username += event.unicode
+                        elif active_input == "password" and len(input_password) < 20:
+                            input_password += event.unicode
+                continue  # Bỏ qua kiểm tra ESC khi đang gõ text
             if event.key == pygame.K_ESCAPE:
 
                 if current_menu == "number":
@@ -548,6 +614,23 @@ while running:
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             event = convert_mouse_event(event)
+
+
+            # CLICK CHUỘT MÀN HÌNH LOGIN / REGISTER
+            if current_menu == "login":
+                if username_box.collidepoint(event.pos):
+                    active_input = "username"
+                elif password_box.collidepoint(event.pos):
+                    active_input = "password"
+                elif submit_auth_button.collidepoint(event.pos):
+                    sound_effects.play("click")
+                    perform_auth()
+                elif switch_auth_button.collidepoint(event.pos):
+                    sound_effects.play("click")
+                    auth_mode = "register" if auth_mode == "login" else "login"
+                    auth_message = ""
+                continue
+
 
             # SOUND ON/OFF
             if current_menu in (
@@ -665,7 +748,10 @@ while running:
 
     mouse_pos = get_canvas_mouse_pos()
 
-    if current_menu == "main":
+    if current_menu == "login":
+        draw_auth_screen(mouse_pos)
+
+    elif current_menu == "main":
         screen.fill(BACKGROUND)
         draw_title("COWS AND BULLS", 150)
 

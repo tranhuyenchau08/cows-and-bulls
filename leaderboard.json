@@ -1,0 +1,74 @@
+{
+    "accounts": {
+        "toibingu": "123",
+        "huhuhu": "123"
+    },
+    "players": {
+        "toibingu": {
+            "total_games": 1,
+            "wins": 1,
+            "losses": 0,
+            "total_score": 210,
+            "best_score": 210,
+            "current_streak": 1,
+            "best_streak": 1,
+            "number": {
+                "games": 1,
+                "wins": 1,
+                "losses": 0,
+                "score": 210,
+                "best_score": 210
+            },
+            "word": {
+                "games": 0,
+                "wins": 0,
+                "losses": 0,
+                "score": 0,
+                "best_score": 0
+            },
+            "history": [
+                {
+                    "mode": "number",
+                    "result": "win",
+                    "target": "",
+                    "attempts": 0,
+                    "score": 210,
+                    "played_at": "2026-11-08 13:19:33"
+                }
+            ]
+        },
+        "huhuhu": {
+            "total_games": 1,
+            "wins": 1,
+            "losses": 0,
+            "total_score": 220,
+            "best_score": 220,
+            "current_streak": 1,
+            "best_streak": 1,
+            "number": {
+                "games": 1,
+                "wins": 1,
+                "losses": 0,
+                "score": 220,
+                "best_score": 220
+            },
+            "word": {
+                "games": 0,
+                "wins": 0,
+                "losses": 0,
+                "score": 0,
+                "best_score": 0
+            },
+            "history": [
+                {
+                    "mode": "number",
+                    "result": "win",
+                    "target": "",
+                    "attempts": 0,
+                    "score": 220,
+                    "played_at": "2026-11-08 13:30:06"
+                }
+            ]
+        }
+    }
+}
