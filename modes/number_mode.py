@@ -7,20 +7,20 @@ from modes.stats import stats_manager
 
 
 class NumberMode:
-    def __init__(self, screen, difficulty="Easy"):
+    def __init__(self, screen, difficulty="Easy", username=""):
         self.screen = screen
+        self.username = username
         self.difficulty = difficulty
         self.game = NumberGame(difficulty)
         self.result_saved = False
         self.score = 0
 
         # Fonts
-        self.title_font = pygame.font.SysFont(
-            "arial", 48, bold=True
-        )
-        self.text_font = pygame.font.SysFont("arial", 25)
-        self.small_font = pygame.font.SysFont("arial", 21)
-        self.input_font = pygame.font.SysFont("consolas", 30)
+        self.title_font = pygame.font.SysFont("georgia", 48, bold=True)
+        self.text_font = pygame.font.SysFont("consolas", 20)
+        self.small_font = pygame.font.SysFont("consolas", 20)
+        self.input_font = pygame.font.SysFont("consolas", 24)
+        self.button_font = pygame.font.SysFont("consolas", 24, bold=True)
 
         # Colors
         self.background = (245, 235, 210)
@@ -63,15 +63,21 @@ class NumberMode:
             "hard": 200,
         }
 
+        max_turns = {
+            "easy": 10,
+            "normal": 8,
+            "hard": 7,
+        }
+
         base_score = base_scores.get(difficulty, 100)
+        total_turns = max_turns.get(difficulty, 10)
 
-        turns_left = getattr(
-            self.game,
-            "turns_left",
-            getattr(self.game, "attempts_left", 0),
-        )
+        turns_left = max(0, getattr(self.game, "turns_left", 0))
+        turns_left = min(turns_left, total_turns)
 
-        return base_score + max(0, turns_left) * 20
+        bonus = round(turns_left / total_turns * 100)
+
+        return base_score + bonus   
 
     
     def save_finished_game(self, won):
@@ -86,6 +92,18 @@ class NumberMode:
             won=won,
             score=self.score,
         )
+
+        # Gửi kết quả lên server
+        stats_manager.submit_score_server(
+            player_name=self.username,
+            mode="number",
+            result="win" if won else "loss",
+            target=str(self.game.secret),
+            attempts=len(self.game.history),
+            score=self.score,
+        )
+
+        stats_manager.refresh_player_stats(self.username)
 
         self.result_saved = True
 
@@ -232,7 +250,7 @@ class NumberMode:
             border_radius=12
         )
 
-        label = self.text_font.render(
+        label = self.button_font.render(
             text,
             True,
             self.text_color

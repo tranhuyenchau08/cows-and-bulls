@@ -1,19 +1,17 @@
 
 import json
-import os
-import requests
-import threading
 from pathlib import Path
 from datetime import datetime
+import requests
 
-SERVER_URL = "http://127.0.0.1:8000"
+API_URL = "http://127.0.0.1:8000"
 
 class StatsManager:
-    def __init__(self, filename="player_stats.json", player_name = "HoangHiep"):
-        # Save the file in the project root directory
+    def __init__(self, filename="player_stats.json"):
         self.file_path = Path(__file__).resolve().parent.parent / filename
-        self.player_name = player_name
         self.data = self._default_data()
+        self.current_username = None
+        self.server_data = None
         self.load()
 
     @staticmethod
@@ -87,7 +85,7 @@ class StatsManager:
         except OSError as error:
             print(f"Could not save statistics: {error}")
 
-    def record_result(self, mode, difficulty, won, score, target="", attempts = 0):
+    def record_result(self, mode, difficulty, won, score):
         """Save the result of one completed game."""
         mode = mode.lower()
 
@@ -159,91 +157,148 @@ class StatsManager:
 
         self.save()
 
-        self._send_score_to_server_async(
-            player_name = self.player_name,
-            mode = mode,
-            result = "win" if won else "loss",
-            target = str(target),
-            attempts = int(attempts),
-            score = score
-        )
         return score
 
+    def register_server(self, username, password):
+        try:
+            response = requests.post(
+                f"{API_URL}/api/register",
+                json={
+                    "username": username,
+                    "password": password
+                },
+                timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            return data.get("success", False), data.get("message", "Registration failed!")
+
+        except requests.exceptions.RequestException:
+            return False, "Could not connect to the server!"
+
+    def login_server(self, username, password):
+        try:
+            response = requests.post(
+                f"{API_URL}/api/login",
+                json={
+                    "username": username,
+                    "password": password
+                },
+                timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("success", False):
+                self.current_username = username
+                self.server_data = self.fetch_player_stats(username)
+
+                if self.server_data is None:
+                    self.server_data = self._default_data()
+
+            return data.get("success", False), data.get("message", "Login failed!")
+
+        except requests.exceptions.RequestException:
+            return False, "Could not connect to the server!"
+
+    def fetch_player_stats(self, username):
+        try:
+            response = requests.get(
+                f"{API_URL}/api/player/{username}",
+                timeout=5
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.RequestException as e:
+            print("Could not fetch player statistics:", e)
+            return None
+
+    def refresh_player_stats(self, username=None):
+        if username is None:
+            username = self.current_username
+
+        if not username:
+            return
+
+        new_data = self.fetch_player_stats(username)
+
+        if new_data is not None:
+            self.server_data = new_data
+
+    def fetch_global_leaderboard(self):
+        try:
+            response = requests.get(
+                f"{API_URL}/api/leaderboard",
+                timeout=5
+            )
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.RequestException:
+            print("Could not load the leaderboard from the server!")
+            return []
+        
+
+    def submit_score_server(
+        self, player_name, mode, result, target, attempts, score
+    ):
+        try:
+            response = requests.post(
+                f"{API_URL}/api/submit-score",
+                json={
+                    "player_name": player_name,
+                    "mode": mode,
+                    "result": result,
+                    "target": str(target),
+                    "attempts": attempts,
+                    "score": score
+                },
+                timeout=5
+            )
+            response.raise_for_status()
+            print("Score submitted successfully!")
+            return True
+
+        except requests.exceptions.RequestException as e:
+            print("Could not submit score to the server:", e)
+            return False
+
     def get_summary(self):
-        """Return summary statistics for the UI."""
-        total = self.data["total_games"]
-        wins = self.data["wins"]
+        """Return statistics for the currently logged-in player."""
+
+        data = self.server_data if self.server_data is not None else self.data
+
+        total = data["total_games"]
+        wins = data["wins"]
 
         win_rate = round(wins / total * 100, 1) if total else 0.0
+
+        # Convert server history to the format used by the UI
+        history = []
+
+        for item in data.get("history", []):
+            history.append({
+                "mode": item.get("mode", "").title(),
+                "difficulty": item.get("difficulty", "Unknown"),
+                "result": item.get("result", "").title(),
+                "score": item.get("score", 0),
+                "date": item.get("date", item.get("played_at", ""))
+            })
 
         return {
             "total_games": total,
             "wins": wins,
-            "losses": self.data["losses"],
-            "total_score": self.data["total_score"],
-            "best_score": self.data["best_score"],
+            "losses": data["losses"],
+            "total_score": data["total_score"],
+            "best_score": data["best_score"],
             "win_rate": win_rate,
-            "number": self.data["number"].copy(),
-            "word": self.data["word"].copy(),
-            "history": list(reversed(self.data["history"])),
+            "number": data["number"].copy(),
+            "word": data["word"].copy(),
+            "history": list(reversed(history)),
         }
-    # CAC HAM XU LY KET NOI API
-    def login_server(self, username, password):
-        """Đã thêm: Hàm xử lý Đăng nhập gửi lên FastAPI Server"""
-        try:
-            payload = {"username": username, "password": password}
-            res = requests.post(f"{SERVER_URL}/api/login", json=payload, timeout=3)
-            data = res.json()
-            if data.get("success"):
-                self.player_name = username
-                return True, data.get("message")
-            return False, data.get("message", "Dang nhap thất bại!")
-        except Exception as e:
-            return False, f"Không thể kết nối Server: {e}"
 
-    def register_server(self, username, password):
-        """Đã thêm: Hàm xử lý Đăng ký gửi lên FastAPI Server"""
-        try:
-            payload = {"username": username, "password": password}
-            res = requests.post(f"{SERVER_URL}/api/register", json=payload, timeout=3)
-            data = res.json()
-            if data.get("success"):
-                self.player_name = username
-                return True, data.get("message")
-            return False, data.get("message", "Dang ký thất bại!")
-        except Exception as e:
-            return False, f"Không thể kết nối Server: {e}"
-    def _send_score_to_server_async(self,player_name,mode,result,target,attempts,score):
-        def worker():
-            payload = {
-                "player_name": player_name,
-                "mode": mode,
-                "result": result,
-                "target": target,
-                "attempts": attempts,
-                "score": score
-            }
-            try:
-                res = requests.post(f"{SERVER_URL}/api/submit-score",json = payload, timeout = 3)
-                if res.status_code == 200:
-                    print(f"-> [API] Đã gửi kỷ lục thành công cho {player_name}")
-            except Exception as e:
-                print(f"-> [API] Lỗi khi lấy bảng xếp hạng từ Server: {e}")
-
-        threading.Thread(target = worker, daemon = True).start()
-
-
-    def fetch_global_leaderboard(self, mode = None):
-        url = f"{SERVER_URL}/api/leaderboard"
-        if mode in ["number", "word"]:
-            url += f"?mode={mode}"
-        try:
-            res = requests.get(url, timeout = 3)
-            if res.status_code == 200:
-                return res.json()
-        except Exception as e:
-            print(f"-> [API] Lỗi khi lấy bảng xếp hạng từ Server: {e}")
-        return []                           
 
 # Shared stats manager used by both game modes
 stats_manager = StatsManager()

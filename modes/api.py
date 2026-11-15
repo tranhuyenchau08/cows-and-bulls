@@ -67,7 +67,7 @@ def register(user: UserAuth):
     accounts = db["accounts"]
     
     if user.username in accounts:
-        return {"success": False, "message": "Tên tài khoản đã tồn tại!"}
+        return {"success": False, "message": "Username already exists!"}
     
     accounts[user.username] = user.password
     
@@ -78,7 +78,7 @@ def register(user: UserAuth):
         players[user.username] = init_player_stats()
         
     save_data(db)
-    return {"success": True, "message": "Đăng ký thành công!"}
+    return {"success": True, "message": "Account does not exist!"}
 
 @app.post("/api/login")
 def login(user: UserAuth):
@@ -86,12 +86,12 @@ def login(user: UserAuth):
     accounts = db["accounts"]
     
     if user.username not in accounts:
-        return {"success": False, "message": "Tài khoản không tồn tại!"}
+        return {"success": False, "message": "Account does not exist!"}
     
     if accounts[user.username] != user.password:
-        return {"success": False, "message": "Mật khẩu không chính xác!"}
+        return {"success": False, "message": "Incorrect password!"}
         
-    return {"success": True, "message": "Đăng nhập thành công!"}
+    return {"success": True, "message":	"Login successful!" }
 @app.post("/api/submit-score")
 def submit_score(data: MatchResult):
     db = load_data()
@@ -155,7 +155,7 @@ def submit_score(data: MatchResult):
     save_data(db)
     
     return {
-        "message": "Cập nhật kỷ lục thành công!",
+        "message":	"Score submitted successfully!",
         "player_name": data.player_name,
         "current_streak": player["current_streak"],
         "best_score": player["best_score"]
@@ -198,7 +198,7 @@ def get_player_stats(player_name: str):
     db = load_data()
     players = db["players"]
     if player_name not in players:
-        raise HTTPException(status_code=404, detail="Không tìm thấy người chơi này!")
+        raise HTTPException(status_code=404, detail="Player not found!")
     return players[player_name]
 
 if __name__ == "__main__":

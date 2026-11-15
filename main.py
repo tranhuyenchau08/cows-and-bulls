@@ -42,14 +42,16 @@ BUTTON_HOVER = (150, 200, 130)
 # FONTS
 # =========================
 
-title_font = pygame.font.Font(None, 80)
-button_font = pygame.font.Font(None, 45)
+main_font = pygame.font.SysFont("consolas", 20)
+title_font = title_font = pygame.font.SysFont("georgia", 64, bold=True)
+button_font = pygame.font.SysFont("consolas", 24, bold=True)
 
 # =========================
 # GAME STATE
 # =========================
 
 current_menu = "login"
+current_username = ""
 selected_mode = None
 number_mode = None
 word_mode = None
@@ -69,9 +71,9 @@ switch_auth_button = pygame.Rect(350, 470, 300, 45)
 
 
 def perform_auth():
-    global current_menu, auth_message
+    global current_menu, auth_message, current_username
     if not input_username or not input_password:
-        auth_message = "Vui long nhap day du thong tin!"
+        auth_message = "Please enter both username and password!"
         return
         
     if auth_mode == "login":
@@ -81,6 +83,7 @@ def perform_auth():
         
     auth_message = msg
     if success:
+        current_username = input_username
         current_menu = "main"
 
 
@@ -89,9 +92,9 @@ def draw_auth_screen(mouse_pos):
     title_text = "LOGIN" if auth_mode == "login" else "REGISTER"
     draw_title(title_text, 100)
 
-    input_font = pygame.font.Font(None, 36)
-    label_font = pygame.font.Font(None, 28)
-    msg_font = pygame.font.Font(None, 24)
+    input_font = main_font
+    label_font = main_font
+    msg_font = main_font
 
     # Username Label & Box
     u_label = label_font.render("Username:", True, TEXT_COLOR)
@@ -100,7 +103,11 @@ def draw_auth_screen(mouse_pos):
     pygame.draw.rect(screen, u_color, username_box, border_radius=8)
     pygame.draw.rect(screen, TEXT_COLOR, username_box, 2, border_radius=8)
     u_surface = input_font.render(input_username, True, TEXT_COLOR)
-    screen.blit(u_surface, (username_box.x + 10, username_box.y + 12))
+    u_rect = u_surface.get_rect(
+        midleft=(username_box.x + 10, username_box.centery)
+    )
+    screen.blit(u_surface, u_rect)
+    
 
     # Password Label & Box
     p_label = label_font.render("Password:", True, TEXT_COLOR)
@@ -109,11 +116,19 @@ def draw_auth_screen(mouse_pos):
     pygame.draw.rect(screen, p_color, password_box, border_radius=8)
     pygame.draw.rect(screen, TEXT_COLOR, password_box, 2, border_radius=8)
     p_surface = input_font.render("*" * len(input_password), True, TEXT_COLOR)
-    screen.blit(p_surface, (password_box.x + 10, password_box.y + 12))
+    p_rect = p_surface.get_rect(
+        midleft=(password_box.x + 10, password_box.centery)
+    )
+    screen.blit(p_surface, p_rect)
+    
 
     # Error / Success Message
     if auth_message:
-        msg_color = (200, 50, 50) if "thanh cong" not in auth_message.lower() else (50, 150, 50)
+        msg_color = (
+            (50, 150, 50)
+            if any(word in auth_message.lower() for word in ("successful", "success"))
+            else (200, 50, 50)
+        )
         msg_surface = msg_font.render(auth_message, True, msg_color)
         screen.blit(msg_surface, msg_surface.get_rect(center=(WIDTH // 2, 375)))
 
@@ -168,11 +183,11 @@ def draw_stats_screen(mouse_pos):
     stats = stats_manager.get_summary()
 
     # Fonts
-    label_font = pygame.font.Font(None, 25)
-    value_font = pygame.font.SysFont("consolas", 38, bold=True)
-    number_font = pygame.font.SysFont("consolas", 26, bold=True)
-    section_font = pygame.font.Font(None, 28)
-    row_font = pygame.font.SysFont("consolas", 20)
+    label_font = main_font
+    value_font = main_font
+    number_font = main_font
+    section_font = main_font
+    row_font = main_font
 
     # UI colors
     card_color = (255, 250, 238)
@@ -263,7 +278,7 @@ def draw_stats_screen(mouse_pos):
             f'Losses: {mode_stats["losses"]}'
         )
 
-        details_font = pygame.font.SysFont("consolas", 20)
+        details_font = main_font
         draw_text(details, details_font, muted_color, (x + 18, 296))
 
         best_text = f'Best: {mode_stats["best_score"]}'
@@ -371,8 +386,8 @@ def draw_leaderboard_screen(mouse_pos):
     gold_color = (215, 165, 65)
     green_color = (105, 155, 100)
 
-    title_font = pygame.font.Font(None, 28)
-    row_font = pygame.font.SysFont("consolas", 20)
+    title_font = main_font
+    row_font = main_font
 
     # Column headings
     headings = [
@@ -516,15 +531,15 @@ def present_screen():
 # =========================
 
 def start_game(difficulty):
-    global number_mode, word_mode, current_menu
+    global number_mode, word_mode, current_menu, current_username
 
     try:
         if selected_mode == "number":
-            number_mode = NumberMode(screen, difficulty)
+            number_mode = NumberMode(screen, difficulty, current_username)
             current_menu = "number"
 
         elif selected_mode == "word":
-            word_mode = WordMode(screen, difficulty)
+            word_mode = WordMode(screen, difficulty, current_username)
             current_menu = "word"
 
     except Exception as error:

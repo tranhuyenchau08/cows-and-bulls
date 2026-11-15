@@ -7,18 +7,20 @@ from modes.stats import stats_manager
 
 
 class WordMode:
-    def __init__(self, screen, difficulty="Easy"):
+    def __init__(self, screen, difficulty="Easy", username=""):
         self.screen = screen
+        self.username = username
         self.difficulty = difficulty.lower()
         self.game = WordGame(self.difficulty)
         self.result_saved = False
         self.score = 0
 
         # Fonts
-        self.title_font = pygame.font.SysFont("arial", 48, bold=True)
-        self.text_font = pygame.font.SysFont("arial", 25)
-        self.small_font = pygame.font.SysFont("arial", 21)
-        self.input_font = pygame.font.SysFont("consolas", 30)
+        self.title_font = pygame.font.SysFont("georgia", 48, bold=True)
+        self.text_font = pygame.font.SysFont("consolas", 20)
+        self.small_font = pygame.font.SysFont("consolas", 20)
+        self.input_font = pygame.font.SysFont("consolas", 24)
+        self.button_font = pygame.font.SysFont("consolas", 24, bold=True)
 
         # Colors
         self.background = (245, 235, 210)
@@ -63,15 +65,21 @@ class WordMode:
             "hard": 200,
         }
 
+        max_turns = {
+            "easy": 10,
+            "normal": 8,
+            "hard": 7,
+        }
+
         base_score = base_scores.get(difficulty, 100)
+        total_turns = max_turns.get(difficulty, 10)
 
-        turns_left = getattr(
-            self.game,
-            "attempts_left",
-            getattr(self.game, "turns_left", 0),
-        )
+        turns_left = max(0, getattr(self.game, "attempts_left", 0))
+        turns_left = min(turns_left, total_turns)
 
-        return base_score + max(0, turns_left) * 20
+        bonus = round(turns_left / total_turns * 100)
+
+        return base_score + bonus
 
     
     def save_finished_game(self, won):
@@ -86,6 +94,18 @@ class WordMode:
             won=won,
             score=self.score,
         )
+
+        stats_manager.submit_score_server(
+            player_name=self.username,
+            mode="word",
+            result="win" if won else "loss",
+            target=str(self.game.secret_word),
+            attempts=len(self.game.history),
+            score=self.score,
+        )
+
+        stats_manager.refresh_player_stats(self.username)
+
         self.result_saved = True
 
 
@@ -228,7 +248,7 @@ class WordMode:
             border_radius=12
         )
 
-        label = self.text_font.render(
+        label = self.button_font.render(
             text,
             True,
             self.text_color

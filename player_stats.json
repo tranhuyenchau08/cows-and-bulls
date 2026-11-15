@@ -1,17 +1,17 @@
 {
-    "total_games": 2,
-    "wins": 2,
-    "losses": 0,
-    "total_score": 430,
-    "best_score": 220,
-    "current_streak": 2,
+    "total_games": 4,
+    "wins": 3,
+    "losses": 1,
+    "total_score": 660,
+    "best_score": 230,
+    "current_streak": 1,
     "best_streak": 2,
     "number": {
-        "games": 2,
-        "wins": 2,
-        "losses": 0,
-        "score": 430,
-        "best_score": 220
+        "games": 4,
+        "wins": 3,
+        "losses": 1,
+        "score": 660,
+        "best_score": 230
     },
     "word": {
         "games": 0,
@@ -34,6 +34,20 @@
             "result": "Win",
             "score": 220,
             "date": "2026-11-08 13:30"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Loss",
+            "score": 0,
+            "date": "2026-11-15 17:30"
+        },
+        {
+            "mode": "Number",
+            "difficulty": "Easy",
+            "result": "Win",
+            "score": 230,
+            "date": "2026-11-15 20:02"
         }
     ]
 }

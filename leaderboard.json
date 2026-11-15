@@ -1,7 +1,8 @@
 {
     "accounts": {
         "toibingu": "123",
-        "huhuhu": "123"
+        "huhuhu": "123",
+        "abcxyz": "123456"
     },
     "players": {
         "toibingu": {
@@ -67,6 +68,47 @@
                     "attempts": 0,
                     "score": 220,
                     "played_at": "2026-11-08 13:30:06"
+                }
+            ]
+        },
+        "abcxyz": {
+            "total_games": 2,
+            "wins": 1,
+            "losses": 1,
+            "total_score": 230,
+            "best_score": 230,
+            "current_streak": 1,
+            "best_streak": 1,
+            "number": {
+                "games": 2,
+                "wins": 1,
+                "losses": 1,
+                "score": 230,
+                "best_score": 230
+            },
+            "word": {
+                "games": 0,
+                "wins": 0,
+                "losses": 0,
+                "score": 0,
+                "best_score": 0
+            },
+            "history": [
+                {
+                    "mode": "number",
+                    "result": "win",
+                    "target": "7389",
+                    "attempts": 6,
+                    "score": 230,
+                    "played_at": "2026-11-15 20:02:05"
+                },
+                {
+                    "mode": "number",
+                    "result": "loss",
+                    "target": "8674",
+                    "attempts": 10,
+                    "score": 0,
+                    "played_at": "2026-11-15 17:30:59"
                 }
             ]
         }
