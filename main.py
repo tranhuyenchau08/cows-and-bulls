@@ -29,28 +29,48 @@ clock = pygame.time.Clock()
 # Canvas giữ nguyên bố cục gốc
 screen = pygame.Surface((WIDTH, HEIGHT))
 
+# Load cow and bull sprites
+cow_image = pygame.image.load(
+    "assets/cow.png"
+).convert_alpha()
+
+bull_image = pygame.image.load(
+    "assets/bull.png"
+).convert_alpha()
+
+# Resize sprites
+cow_image = pygame.transform.smoothscale(
+    cow_image, (230, 230)
+)
+
+bull_image = pygame.transform.smoothscale(
+    bull_image, (230, 230)
+)
+
 # =========================
 # COLORS
 # =========================
 
-BACKGROUND = (245, 235, 210)
-TEXT_COLOR = (50, 40, 30)
-BUTTON_COLOR = (120, 170, 100)
-BUTTON_HOVER = (150, 200, 130)
+BACKGROUND = (246, 237, 220)
+TEXT_COLOR = (65, 48, 38)
+BUTTON_COLOR = (137, 164, 112)
+BUTTON_HOVER = (166, 193, 139)
 
 # =========================
 # FONTS
 # =========================
 
 main_font = pygame.font.SysFont("consolas", 20)
-title_font = title_font = pygame.font.SysFont("georgia", 64, bold=True)
+title_font = pygame.font.SysFont(
+    "consolas", 54, bold=True
+)
 button_font = pygame.font.SysFont("consolas", 24, bold=True)
 
 # =========================
 # GAME STATE
 # =========================
 
-current_menu = "login"
+current_menu = "welcome"
 current_username = ""
 selected_mode = None
 number_mode = None
@@ -85,6 +105,133 @@ def perform_auth():
     if success:
         current_username = input_username
         current_menu = "main"
+
+# OLD VERSION:
+# Mascots were originally drawn using Pygame shapes.
+# Replaced with external PNG sprites (cow.png and bull.png)
+# for better visual quality and easier customization.
+
+def draw_mascot(x, y, is_bull=False):
+    # Ears
+    pygame.draw.ellipse(
+        screen, (115, 85, 65),
+        (x - 48, y - 15, 25, 35)
+    )
+    pygame.draw.ellipse(
+        screen, (115, 85, 65),
+        (x + 23, y - 15, 25, 35)
+    )
+
+    # Face
+    pygame.draw.circle(
+        screen, (255, 245, 220), (x, y), 38
+    )
+
+    # Horns
+    if is_bull:
+        pygame.draw.polygon(
+            screen, (225, 190, 120),
+            [(x - 22, y - 28), (x - 38, y - 55),
+             (x - 5, y - 32)]
+        )
+        pygame.draw.polygon(
+            screen, (225, 190, 120),
+            [(x + 22, y - 28), (x + 38, y - 55),
+             (x + 5, y - 32)]
+        )
+
+    # Eyes
+    pygame.draw.circle(screen, TEXT_COLOR, (x - 13, y - 8), 4)
+    pygame.draw.circle(screen, TEXT_COLOR, (x + 13, y - 8), 4)
+
+    # Nose
+    pygame.draw.ellipse(
+        screen, (220, 155, 145),
+        (x - 19, y + 8, 38, 22)
+    )
+
+def draw_welcome_screen(mouse_pos):
+    screen.fill(BACKGROUND)
+
+    # Draw COWS title
+    cows_font = pygame.font.Font(
+        "assets/BerkshireSwash-Regular.ttf", 150
+    )
+
+    cows_text = cows_font.render(
+        "COWS", True, TEXT_COLOR
+    )
+
+    screen.blit(
+        cows_text,
+        cows_text.get_rect(
+            center=(WIDTH // 2, 110)
+        )
+    )
+
+    # Draw BULLS title
+    bulls_font = pygame.font.Font(
+        "assets/BerkshireSwash-Regular.ttf", 150
+    )
+
+    bulls_text = bulls_font.render(
+        "BULLS", True, TEXT_COLOR
+    )
+
+    screen.blit(
+        bulls_text,
+        bulls_text.get_rect(
+            center=(WIDTH // 2, 430)
+        )
+    )
+
+    # Draw cow sprite
+    cow_rect = cow_image.get_rect(
+        center=(WIDTH // 2 - 180, 270)
+    )
+
+    screen.blit(cow_image, cow_rect)
+
+    # Draw bull sprite
+    bull_rect = bull_image.get_rect(
+        center=(WIDTH // 2 + 180, 270)
+    )
+
+    screen.blit(bull_image, bull_rect)
+
+    # Draw ampersand
+    amp_font = pygame.font.SysFont(
+        "segoe script", 140 , bold=True, italic=True
+    )
+
+    amp_text = amp_font.render(
+        "&", True, TEXT_COLOR
+    )
+
+    screen.blit(
+        amp_text,
+        amp_text.get_rect(
+            center=(WIDTH // 2, 270)
+        )
+    )
+
+    draw_button(
+        welcome_login_button, "LOGIN", mouse_pos
+    )
+
+    draw_button(
+        welcome_register_button, "REGISTER", mouse_pos
+    )
+
+    note = main_font.render(
+        "Don't have an account? Choose REGISTER!",
+        True, TEXT_COLOR
+    )
+
+    screen.blit(
+        note,
+        note.get_rect(center=(WIDTH // 2, 620))
+    )
 
 
 def draw_auth_screen(mouse_pos):
@@ -133,7 +280,7 @@ def draw_auth_screen(mouse_pos):
         screen.blit(msg_surface, msg_surface.get_rect(center=(WIDTH // 2, 375)))
 
     btn_text = "SUBMIT LOGIN" if auth_mode == "login" else "SUBMIT REGISTER"
-    switch_text = "Switch to Register" if auth_mode == "login" else "Switch to Login"
+    switch_text = "BACK TO WELCOME"
     
     draw_button(submit_auth_button, btn_text, mouse_pos)
     draw_button(switch_auth_button, switch_text, mouse_pos)
@@ -155,6 +302,14 @@ def draw_button(rect, text, mouse_pos):
         border_radius=15
     )
 
+    pygame.draw.rect(
+        screen,
+        (85, 105, 70),
+        rect,
+        2,
+        border_radius=15
+    )
+
     text_surface = button_font.render(
         text,
         True,
@@ -168,11 +323,19 @@ def draw_button(rect, text, mouse_pos):
 
 
 def draw_title(text, y=130):
-    title = title_font.render(text, True, TEXT_COLOR)
-    screen.blit(
-        title,
-        title.get_rect(center=(WIDTH // 2, y))
+    shadow = title_font.render(text, True, (110, 85, 55))
+    title = title_font.render(text, True, (65, 48, 38))
+
+    shadow_rect = shadow.get_rect(
+        center=(WIDTH // 2 + 4, y + 4)
     )
+
+    title_rect = title.get_rect(
+        center=(WIDTH // 2, y)
+    )
+
+    screen.blit(shadow, shadow_rect)
+    screen.blit(title, title_rect)
 
 
 
@@ -449,6 +612,8 @@ leaderboard_button = pygame.Rect(350, 425, 300, 60)
 quit_button = pygame.Rect(350, 505, 300, 60)
 stats_back_button = pygame.Rect(350, 610, 300, 55)
 leaderboard_back_button = pygame.Rect(350, 610, 300, 55)
+welcome_login_button = pygame.Rect(300, 550, 180, 55)
+welcome_register_button = pygame.Rect(520, 550, 180, 55)
 
 number_mode_button = pygame.Rect(350, 250, 300, 70)
 word_mode_button = pygame.Rect(350, 350, 300, 70)
@@ -581,6 +746,7 @@ while running:
 
         if event.type == pygame.KEYDOWN:
             # GÕ PHÍM KHI Ở MÀN HÌNH LOGIN / REGISTER
+
             if current_menu == "login":
                 if event.key == pygame.K_TAB:
                     active_input = "password" if active_input == "username" else "username"
@@ -632,6 +798,21 @@ while running:
 
 
             # CLICK CHUỘT MÀN HÌNH LOGIN / REGISTER
+            if current_menu == "welcome":
+                if welcome_login_button.collidepoint(event.pos):
+                    sound_effects.play("click")
+                    auth_mode = "login"
+                    auth_message = ""
+                    current_menu = "login"
+
+                elif welcome_register_button.collidepoint(event.pos):
+                    sound_effects.play("click")
+                    auth_mode = "register"
+                    auth_message = ""
+                    current_menu = "login"
+
+                continue
+
             if current_menu == "login":
                 if username_box.collidepoint(event.pos):
                     active_input = "username"
@@ -642,8 +823,8 @@ while running:
                     perform_auth()
                 elif switch_auth_button.collidepoint(event.pos):
                     sound_effects.play("click")
-                    auth_mode = "register" if auth_mode == "login" else "login"
                     auth_message = ""
+                    current_menu = "welcome"
                 continue
 
 
@@ -763,9 +944,10 @@ while running:
 
     mouse_pos = get_canvas_mouse_pos()
 
-    if current_menu == "login":
+    if current_menu == "welcome":
+        draw_welcome_screen(mouse_pos)
+    elif current_menu == "login":
         draw_auth_screen(mouse_pos)
-
     elif current_menu == "main":
         screen.fill(BACKGROUND)
         draw_title("COWS AND BULLS", 150)
