@@ -7,7 +7,7 @@ from modes.stats import stats_manager
 
 
 class WordMode:
-    def __init__(self, screen, difficulty="Easy", username=""):
+    def __init__(self, screen, difficulty="Easy", username="", theme=None):
         self.screen = screen
         self.username = username
         self.difficulty = difficulty.lower()
@@ -39,17 +39,36 @@ class WordMode:
             self.bull_icon, (24, 24)
         )
 
-        # Colors
-        self.background = (246, 237, 220)
-        self.text_color = (75, 55, 40)
-        self.button_color = (145, 100, 65)
-        self.button_hover = (175, 125, 85)
-        self.input_hint_color = (155, 135, 110)
-        self.white = (255, 250, 240)
+        # Theme
+        if theme is None:
+            theme = {
+                "background": (246, 237, 220),
+                "text": (65, 48, 38),
+                "button": (137, 164, 112),
+                "hover": (166, 193, 139),
+            }
 
-        # Input styling
-        self.input_border = (195, 170, 140)
-        self.input_active_border = (142, 170, 130)
+        self.background = theme["background"]
+        self.text_color = theme["text"]
+        self.button_color = theme["button"]
+        self.button_hover = theme["hover"]
+
+        # Derived colors
+        self.card_color = self.blend_color(
+            self.background, (255, 255, 255), 0.75
+        )
+
+        self.input_hint_color = self.blend_color(
+            self.text_color, self.background, 0.45
+        )
+
+        self.input_border = self.blend_color(
+            self.text_color, self.background, 0.55
+        )
+
+        self.input_active_border = self.button_color
+
+        self.white = (255, 250, 240)
 
         # Input
         self.input_text = ""
@@ -74,6 +93,13 @@ class WordMode:
         # Guess history scrolling
         self.history_area = pygame.Rect(160, 145, 680, 285)
         self.history_scroll = 0
+
+    @staticmethod
+    def blend_color(color1, color2, amount):
+        return tuple(
+            int(color1[i] * (1 - amount) + color2[i] * amount)
+            for i in range(3)
+        )
 
     def calculate_score(self, won):
         if not won:
@@ -155,14 +181,12 @@ class WordMode:
         result = self.game.check_guess(guess)
         self.input_text = ""
 
-        # Handle invalid guesses returned as a tuple
         if isinstance(result, tuple):
             sound_effects.play("wrong")
             self.message = str(result[1])
             self.message_color = (180, 55, 45)
             return
 
-        # Handle invalid guesses returned as a dictionary
         if result.get("status") == "error":
             sound_effects.play("wrong")
             self.message = result.get(
@@ -171,7 +195,6 @@ class WordMode:
             self.message_color = (180, 55, 45)
             return
 
-        # Automatically scroll to the latest guess
         card_height = 58
         card_spacing = 8
 
@@ -199,7 +222,6 @@ class WordMode:
                 f"YOU WIN! Answer: {self.game.secret_word}"
             )
             self.message_color = (45, 120, 55)
-
             self.save_finished_game(True)
 
         elif result.get("status") == "lose":
@@ -208,14 +230,12 @@ class WordMode:
                 f"GAME OVER! Answer: {self.game.secret_word}"
             )
             self.message_color = (180, 55, 45)
-
             self.save_finished_game(False)
 
         else:
             sound_effects.play("click")
 
     def handle_events(self, event):
-        # Scroll guess history with mouse wheel
         if event.type == pygame.MOUSEWHEEL:
             if self.history_area.collidepoint(
                 pygame.mouse.get_pos()
@@ -239,7 +259,6 @@ class WordMode:
                     min(self.history_scroll, max_scroll)
                 )
 
-        # Keyboard input
         if event.type == pygame.KEYDOWN:
             if self.game.is_game_over:
                 return None
@@ -259,7 +278,6 @@ class WordMode:
                 ):
                     self.input_text += event.unicode.upper()
 
-        # Mouse input
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button != 1:
                 return None
@@ -269,7 +287,6 @@ class WordMode:
                     self.game.reset()
                     self.history_scroll = 0
 
-                    # Reset score tracking for the new game
                     self.result_saved = False
                     self.score = 0
 
@@ -324,7 +341,7 @@ class WordMode:
         label = self.button_font.render(
             text,
             True,
-            (255, 250, 240)
+            self.white
         )
 
         self.screen.blit(
@@ -335,7 +352,6 @@ class WordMode:
     def draw(self, mouse_pos=None):
         self.screen.fill(self.background)
 
-        # Mouse coordinates in canvas space
         if mouse_pos is None:
             mouse_pos = (-1, -1)
 
@@ -343,7 +359,7 @@ class WordMode:
         title = self.title_font.render(
             "WORD MODE",
             True,
-            (100, 65, 45)
+            self.text_color
         )
 
         self.screen.blit(
@@ -383,31 +399,29 @@ class WordMode:
                 - self.history_scroll
             )
 
-            # Guess card
             card_rect = pygame.Rect(
                 180, card_y, 640, card_height
             )
 
             pygame.draw.rect(
                 self.screen,
-                (250, 242, 225),
+                self.card_color,
                 card_rect,
                 border_radius=12
             )
 
             pygame.draw.rect(
                 self.screen,
-                (195, 170, 140),
+                self.input_border,
                 card_rect,
                 width=2,
                 border_radius=12
             )
 
-            # Guess number
             guess_label = self.small_font.render(
                 f"GUESS #{index + 1}",
                 True,
-                (145, 100, 65)
+                self.button_color
             )
 
             self.screen.blit(
@@ -418,7 +432,7 @@ class WordMode:
             guess_text = self.small_font.render(
                 str(item["guess"]),
                 True,
-                (95, 65, 45)
+                self.text_color
             )
 
             self.screen.blit(
@@ -426,10 +440,9 @@ class WordMode:
                 (200, card_y + 27)
             )
 
-            # Cow and Bull progress bars
             total_letters = max(1, len(str(item["guess"])))
 
-            # Cow progress bar
+            # Cow bar
             self.screen.blit(
                 self.cow_icon,
                 (430, card_y + 17)
@@ -452,9 +465,7 @@ class WordMode:
                 (
                     460,
                     card_y + 23,
-                    int(
-                        105 * item["cows"] / total_letters
-                    ),
+                    int(105 * item["cows"] / total_letters),
                     10
                 ),
                 border_radius=5
@@ -471,7 +482,7 @@ class WordMode:
                 (570, card_y + 17)
             )
 
-            # Bull progress bar
+            # Bull bar
             self.screen.blit(
                 self.bull_icon,
                 (610, card_y + 17)
@@ -494,9 +505,7 @@ class WordMode:
                 (
                     640,
                     card_y + 23,
-                    int(
-                        105 * item["bulls"] / total_letters
-                    ),
+                    int(105 * item["bulls"] / total_letters),
                     10
                 ),
                 border_radius=5
@@ -519,7 +528,7 @@ class WordMode:
         if not self.game.is_game_over:
             pygame.draw.rect(
                 self.screen,
-                (250, 242, 225),
+                self.card_color,
                 self.input_box,
                 border_radius=8
             )
@@ -586,12 +595,16 @@ class WordMode:
 
         # Game-over screen
         if self.game.is_game_over:
-            score_text = self.text_font.render(
-                f"FINAL SCORE: {self.score}",
-                True,
+            score_color = (
                 (125, 100, 75)
                 if self.game.won
                 else self.text_color
+            )
+
+            score_text = self.text_font.render(
+                f"FINAL SCORE: {self.score}",
+                True,
+                score_color
             )
 
             self.screen.blit(

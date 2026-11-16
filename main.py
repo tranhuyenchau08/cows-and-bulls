@@ -45,22 +45,58 @@ bull_image = pygame.transform.smoothscale(
 )
 
 # =========================
-# COLORS
+# COLORS / THEMES
 # =========================
 
-BACKGROUND = (246, 237, 220)
-TEXT_COLOR = (65, 48, 38)
-BUTTON_COLOR = (137, 164, 112)
-BUTTON_HOVER = (166, 193, 139)
+THEMES = [
+    {
+        "name": "CREAM",
+        "background": (246, 237, 220),
+        "text": (65, 48, 38),
+        "button": (137, 164, 112),
+        "hover": (166, 193, 139),
+    },
+    {
+        "name": "MINT",
+        "background": (225, 240, 229),
+        "text": (45, 70, 58),
+        "button": (112, 160, 139),
+        "hover": (145, 190, 165),
+    }
+]
+
+current_theme = 0
+
+BACKGROUND = THEMES[0]["background"]
+TEXT_COLOR = THEMES[0]["text"]
+BUTTON_COLOR = THEMES[0]["button"]
+BUTTON_HOVER = THEMES[0]["hover"]
+
+
+def apply_theme():
+    global BACKGROUND
+    global TEXT_COLOR
+    global BUTTON_COLOR
+    global BUTTON_HOVER
+
+    theme = THEMES[current_theme]
+
+    BACKGROUND = theme["background"]
+    TEXT_COLOR = theme["text"]
+    BUTTON_COLOR = theme["button"]
+    BUTTON_HOVER = theme["hover"]
+
 
 # =========================
 # FONTS
 # =========================
 
 main_font = pygame.font.SysFont("consolas", 20)
+
 title_font = pygame.font.SysFont(
     "consolas", 54, bold=True
 )
+
 button_font = pygame.font.SysFont(
     "consolas", 24, bold=True
 )
@@ -109,7 +145,9 @@ switch_auth_button = pygame.Rect(
 # =========================
 
 def perform_auth():
-    global current_menu, auth_message, current_username
+    global current_menu
+    global auth_message
+    global current_username
 
     if not input_username or not input_password:
         auth_message = "Please enter both username and password!"
@@ -489,7 +527,7 @@ def draw_title(text, y=130):
     )
 
     title = title_font.render(
-        text, True, (65, 48, 38)
+        text, True, TEXT_COLOR
     )
 
     shadow_rect = shadow.get_rect(
@@ -508,9 +546,8 @@ def draw_title(text, y=130):
 # HOW TO PLAY SCREEN
 # =========================
 
-
-
 def draw_how_to_play_screen(mouse_pos):
+
     screen.fill(BACKGROUND)
 
     draw_title("HOW TO PLAY", 65)
@@ -565,6 +602,7 @@ def draw_how_to_play_screen(mouse_pos):
     y = 260
 
     for line in number_lines:
+
         text_surface = main_font.render(
             line, True, TEXT_COLOR
         )
@@ -613,6 +651,7 @@ def draw_how_to_play_screen(mouse_pos):
     y = 260
 
     for line in word_lines:
+
         text_surface = main_font.render(
             line, True, TEXT_COLOR
         )
@@ -634,9 +673,114 @@ def draw_how_to_play_screen(mouse_pos):
         )
     )
 
-    # Back Button
     draw_button(
         how_to_play_back_button,
+        "BACK TO MENU",
+        mouse_pos
+    )
+
+
+# =========================
+# SETTINGS SCREEN
+# =========================
+
+def draw_settings_screen(mouse_pos):
+
+    screen.fill(BACKGROUND)
+
+    draw_title("SETTINGS", 100)
+
+    card_color = (255, 250, 238)
+    muted_color = (125, 115, 98)
+
+    # Settings card
+    settings_card = pygame.Rect(
+        200, 165, 600, 390
+    )
+
+    pygame.draw.rect(
+        screen,
+        card_color,
+        settings_card,
+        border_radius=20
+    )
+
+    # Account label
+    account_title = main_font.render(
+        "CURRENT ACCOUNT",
+        True,
+        muted_color
+    )
+
+    screen.blit(
+        account_title,
+        account_title.get_rect(
+            center=(WIDTH // 2, 215)
+        )
+    )
+
+    account_name = pygame.font.SysFont(
+        "consolas", 28, bold=True
+    ).render(
+        current_username if current_username else "Guest",
+        True,
+        TEXT_COLOR
+    )
+
+    screen.blit(
+        account_name,
+        account_name.get_rect(
+            center=(WIDTH // 2, 255)
+        )
+    )
+
+    # Theme label
+    theme_label = main_font.render(
+        "THEME",
+        True,
+        TEXT_COLOR
+    )
+
+    screen.blit(
+        theme_label,
+        theme_label.get_rect(
+            center=(WIDTH // 2, 310)
+        )
+    )
+
+    theme_text = (
+        "CURRENT: " + THEMES[current_theme]["name"]
+    )
+
+    draw_button(
+        theme_button,
+        theme_text,
+        mouse_pos
+    )
+
+    # Sound toggle
+    sound_text = (
+        "SOUND: ON"
+        if sound_effects.enabled
+        else "SOUND: OFF"
+    )
+
+    draw_button(
+        sound_button,
+        sound_text,
+        mouse_pos
+    )
+
+    # Logout
+    draw_button(
+        logout_button,
+        "LOG OUT",
+        mouse_pos
+    )
+
+    # Back
+    draw_button(
+        settings_back_button,
         "BACK TO MENU",
         mouse_pos
     )
@@ -1057,29 +1201,22 @@ def draw_leaderboard_screen(mouse_pos):
 # BUTTONS
 # =========================
 
-game_mode_button = pygame.Rect(
-    350, 260, 300, 65
-)
+# Main menu buttons
+game_mode_button = pygame.Rect(350, 220, 300, 55)
+stats_button = pygame.Rect(350, 290, 300, 55)
+leaderboard_button = pygame.Rect(350, 360, 300, 55)
+settings_menu_button = pygame.Rect(350, 430, 300, 55)
+how_to_play_button = pygame.Rect(350, 500, 300, 55)
+quit_button = pygame.Rect(350, 570, 300, 55)
 
-stats_button = pygame.Rect(
-    350, 345, 300, 60
-)
+# Settings buttons
+theme_button = pygame.Rect(350, 345, 300, 55)
+sound_button = pygame.Rect(350, 420, 300, 55)
+logout_button = pygame.Rect(350, 495, 300, 55)
+settings_back_button = pygame.Rect(350, 610, 300, 55)
 
-leaderboard_button = pygame.Rect(
-    350, 425, 300, 60
-)
-
-quit_button = pygame.Rect(
-    350, 505, 300, 60
-)
-
-how_to_play_button = pygame.Rect(
-    350, 585, 300, 55
-)
-
-how_to_play_back_button = pygame.Rect(
-    350, 610, 300, 55
-)
+# Other buttons
+how_to_play_back_button = pygame.Rect(350, 610, 300, 55)
 
 stats_back_button = pygame.Rect(
     350, 610, 300, 55
@@ -1123,10 +1260,6 @@ hard_button = pygame.Rect(
 
 difficulty_back_button = pygame.Rect(
     350, 500, 300, 65
-)
-
-sound_button = pygame.Rect(
-    790, 20, 190, 45
 )
 
 
@@ -1216,7 +1349,7 @@ def present_screen():
         get_display_geometry()
     )
 
-    window.fill((246, 237, 220))
+    window.fill(BACKGROUND)
 
     scaled_screen = pygame.transform.smoothscale(
         screen,
@@ -1233,6 +1366,7 @@ def present_screen():
 # START GAME
 # =========================
 
+
 def start_game(difficulty):
 
     global number_mode
@@ -1247,7 +1381,8 @@ def start_game(difficulty):
             number_mode = NumberMode(
                 screen,
                 difficulty,
-                current_username
+                current_username,
+                THEMES[current_theme]
             )
 
             current_menu = "number"
@@ -1257,7 +1392,8 @@ def start_game(difficulty):
             word_mode = WordMode(
                 screen,
                 difficulty,
-                current_username
+                current_username,
+                THEMES[current_theme]
             )
 
             current_menu = "word"
@@ -1371,7 +1507,8 @@ while running:
                     "mode",
                     "stats",
                     "leaderboard",
-                    "how_to_play"
+                    "how_to_play",
+                    "settings"
                 ):
                     current_menu = "main"
 
@@ -1450,18 +1587,6 @@ while running:
 
                 continue
 
-            # SOUND ON/OFF
-            if current_menu in (
-                "main",
-                "mode",
-                "number_difficulty",
-                "word_difficulty",
-                "how_to_play"
-            ) and sound_button.collidepoint(event.pos):
-
-                sound_effects.toggle()
-                continue
-
             # MAIN MENU
             if current_menu == "main":
 
@@ -1480,15 +1605,54 @@ while running:
                     sound_effects.play("click")
                     current_menu = "leaderboard"
 
-                elif quit_button.collidepoint(event.pos):
+                elif settings_menu_button.collidepoint(event.pos):
 
                     sound_effects.play("click")
-                    running = False
+                    current_menu = "settings"
 
                 elif how_to_play_button.collidepoint(event.pos):
 
                     sound_effects.play("click")
                     current_menu = "how_to_play"
+
+                elif quit_button.collidepoint(event.pos):
+
+                    sound_effects.play("click")
+                    running = False
+
+            # SETTINGS
+            elif current_menu == "settings":
+
+                if theme_button.collidepoint(event.pos):
+
+                    sound_effects.play("click")
+
+                    current_theme = 1 - current_theme
+                    apply_theme()
+
+                elif sound_button.collidepoint(event.pos):
+
+                    sound_effects.toggle()
+
+
+                elif logout_button.collidepoint(event.pos):
+
+                    sound_effects.play("click")
+
+                    current_username = ""
+                    input_username = ""
+                    input_password = ""
+                    active_input = None
+                    auth_message = ""
+                    show_password = False
+                    auth_mode = "login"
+
+                    current_menu = "welcome"
+
+                elif settings_back_button.collidepoint(event.pos):
+
+                    sound_effects.play("click")
+                    current_menu = "main"
 
             # HOW TO PLAY
             elif current_menu == "how_to_play":
@@ -1617,7 +1781,7 @@ while running:
 
         screen.fill(BACKGROUND)
 
-        draw_title("COWS AND BULLS", 150)
+        draw_title("COWS AND BULLS", 130)
 
         draw_button(
             game_mode_button,
@@ -1638,8 +1802,8 @@ while running:
         )
 
         draw_button(
-            quit_button,
-            "QUIT",
+            settings_menu_button,
+            "SETTINGS",
             mouse_pos
         )
 
@@ -1648,6 +1812,16 @@ while running:
             "HOW TO PLAY",
             mouse_pos
         )
+
+        draw_button(
+            quit_button,
+            "QUIT",
+            mouse_pos
+        )
+
+    elif current_menu == "settings":
+
+        draw_settings_screen(mouse_pos)
 
     elif current_menu == "how_to_play":
 
@@ -1717,27 +1891,6 @@ while running:
     elif current_menu == "word":
 
         word_mode.draw(mouse_pos)
-
-    # SOUND BUTTON
-    if current_menu in (
-        "main",
-        "mode",
-        "number_difficulty",
-        "word_difficulty",
-        "how_to_play"
-    ):
-
-        sound_text = (
-            "SOUND: ON"
-            if sound_effects.enabled
-            else "SOUND: OFF"
-        )
-
-        draw_button(
-            sound_button,
-            sound_text,
-            mouse_pos
-        )
 
     # DISPLAY
     present_screen()

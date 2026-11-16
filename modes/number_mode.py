@@ -7,7 +7,7 @@ from modes.stats import stats_manager
 
 
 class NumberMode:
-    def __init__(self, screen, difficulty="Easy", username=""):
+    def __init__(self, screen, difficulty="Easy", username="", theme=None):
         self.screen = screen
         self.username = username
         self.difficulty = difficulty
@@ -21,7 +21,6 @@ class NumberMode:
         self.small_font = pygame.font.SysFont("consolas", 20)
         self.input_font = pygame.font.SysFont("consolas", 24)
         self.button_font = pygame.font.SysFont("consolas", 24, bold=True)
-
 
         # Load Cow and Bull icons once
         self.cow_icon = pygame.image.load(
@@ -40,18 +39,44 @@ class NumberMode:
             self.bull_icon, (24, 24)
         )
 
+        # Theme colors
+        if theme is None:
+            theme = {
+                "background": (246, 237, 220),
+                "text": (65, 48, 38),
+                "button": (137, 164, 112),
+                "hover": (166, 193, 139),
+            }
 
-        # Colors
-        self.background = (246, 237, 220)
-        self.text_color = (75, 55, 40)
-        self.button_color = (145, 100, 65)
-        self.button_hover = (175, 125, 85)
-        self.input_hint_color = (155, 135, 110)
-        self.white = (255, 250, 240)
+        self.background = theme["background"]
+        self.text_color = theme["text"]
+        self.button_color = theme["button"]
+        self.button_hover = theme["hover"]
 
-        # Input styling
-        self.input_border = (195, 170, 140)
-        self.input_active_border = (142, 170, 130)
+        # Derive supporting colors from the selected theme
+        self.white = self.blend_color(
+            self.background, (255, 255, 255), 0.55
+        )
+        self.input_hint_color = self.blend_color(
+            self.text_color, self.background, 0.45
+        )
+        self.input_border = self.blend_color(
+            self.text_color, self.background, 0.35
+        )
+        self.input_active_border = self.button_color
+
+        self.card_color = self.blend_color(
+            self.background, (255, 255, 255), 0.45
+        )
+        self.card_border = self.input_border
+        self.title_color = self.blend_color(
+            self.text_color, self.button_color, 0.25
+        )
+        self.guess_label_color = self.button_color
+        self.guess_text_color = self.text_color
+        self.button_text_color = self.blend_color(
+            self.background, (255, 255, 255), 0.8
+        )
 
         # Input
         self.input_text = ""
@@ -77,7 +102,13 @@ class NumberMode:
         self.history_area = pygame.Rect(160, 145, 680, 285)
         self.history_scroll = 0
 
-    
+    @staticmethod
+    def blend_color(color1, color2, amount):
+        return tuple(
+            int(color1[i] * (1 - amount) + color2[i] * amount)
+            for i in range(3)
+        )
+
     def calculate_score(self, won):
         if not won:
             return 0
@@ -104,9 +135,8 @@ class NumberMode:
 
         bonus = round(turns_left / total_turns * 100)
 
-        return base_score + bonus   
+        return base_score + bonus
 
-    
     def save_finished_game(self, won):
         if self.result_saved:
             return
@@ -120,7 +150,6 @@ class NumberMode:
             score=self.score,
         )
 
-        # Gửi kết quả lên server
         stats_manager.submit_score_server(
             player_name=self.username,
             mode="number",
@@ -134,8 +163,6 @@ class NumberMode:
 
         self.result_saved = True
 
-
-
     @staticmethod
     def format_result(bulls, cows):
         bull_word = "Bull" if bulls == 1 else "Bulls"
@@ -143,7 +170,6 @@ class NumberMode:
 
         return f"{bulls} {bull_word}, {cows} {cow_word}"
 
-    
     def submit_guess(self):
         if self.game.game_over:
             return
@@ -194,7 +220,6 @@ class NumberMode:
             )
             self.message_color = (45, 120, 55)
 
-            # Them: luu ket qua khi thang
             self.save_finished_game(True)
 
         elif result["game_over"]:
@@ -204,12 +229,10 @@ class NumberMode:
             )
             self.message_color = (180, 55, 45)
 
-            # Them: luu ket qua khi thua
             self.save_finished_game(False)
 
         else:
             sound_effects.play("click")
-
 
     def handle_events(self, event):
         # Scroll guess history with mouse wheel
@@ -232,7 +255,7 @@ class NumberMode:
                     0,
                     min(self.history_scroll, max_scroll)
                 )
-        
+
         # Keyboard input
         if event.type == pygame.KEYDOWN:
             if self.game.game_over:
@@ -262,7 +285,6 @@ class NumberMode:
                     self.game.reset()
                     self.history_scroll = 0
 
-                    # Reset score tracking for the new game
                     self.result_saved = False
                     self.score = 0
 
@@ -316,7 +338,7 @@ class NumberMode:
         label = self.button_font.render(
             text,
             True,
-            (255, 250, 240)
+            self.button_text_color
         )
 
         self.screen.blit(
@@ -327,8 +349,6 @@ class NumberMode:
     def draw(self, mouse_pos=None):
         self.screen.fill(self.background)
 
-        # main.py passes mouse coordinates in canvas space.
-        # Fallback is useful if draw() is called independently.
         if mouse_pos is None:
             mouse_pos = (-1, -1)
 
@@ -336,7 +356,7 @@ class NumberMode:
         title = self.title_font.render(
             "NUMBER MODE",
             True,
-            (100, 65, 45)
+            self.title_color
         )
         self.screen.blit(
             title,
@@ -360,8 +380,7 @@ class NumberMode:
             info.get_rect(center=(500, 110))
         )
 
-        
-        # Guess history - Bulls & Cows Arena
+        # Guess history
         history_start_y = 155
         card_height = 58
         card_spacing = 8
@@ -375,17 +394,17 @@ class NumberMode:
                 - self.history_scroll
             )
 
-            # Guess card
             card_rect = pygame.Rect(180, card_y, 640, card_height)
+
             pygame.draw.rect(
                 self.screen,
-                (250, 242, 225),
+                self.card_color,
                 card_rect,
                 border_radius=12
             )
             pygame.draw.rect(
                 self.screen,
-                (195, 170, 140),
+                self.card_border,
                 card_rect,
                 width=2,
                 border_radius=12
@@ -395,20 +414,18 @@ class NumberMode:
             guess_label = self.small_font.render(
                 f'GUESS #{index + 1}',
                 True,
-                (145, 100, 65)
+                self.guess_label_color
             )
             self.screen.blit(guess_label, (200, card_y + 7))
 
             guess_text = self.small_font.render(
                 str(item["guess"]),
                 True,
-                (95, 65, 45)
+                self.guess_text_color
             )
             self.screen.blit(guess_text, (200, card_y + 27))
 
-            
             # Cow and Bull progress bars
-
             total_digits = len(str(item["guess"]))
 
             # Cow progress bar
@@ -416,18 +433,27 @@ class NumberMode:
 
             cow_bar = pygame.Rect(460, card_y + 23, 105, 10)
             pygame.draw.rect(
-                self.screen, (215, 205, 185), cow_bar,
+                self.screen,
+                (215, 205, 185),
+                cow_bar,
                 border_radius=5
             )
             pygame.draw.rect(
-                self.screen, (155, 175, 125),
-                (460, card_y + 23,
-                 int(105 * item["cows"] / total_digits), 10),
+                self.screen,
+                (155, 175, 125),
+                (
+                    460,
+                    card_y + 23,
+                    int(105 * item["cows"] / total_digits),
+                    10
+                ),
                 border_radius=5
             )
 
             cow_text = self.small_font.render(
-                str(item["cows"]), True, (95, 120, 75)
+                str(item["cows"]),
+                True,
+                (95, 120, 75)
             )
             self.screen.blit(cow_text, (570, card_y + 17))
 
@@ -436,29 +462,37 @@ class NumberMode:
 
             bull_bar = pygame.Rect(640, card_y + 23, 105, 10)
             pygame.draw.rect(
-                self.screen, (215, 205, 185), bull_bar,
+                self.screen,
+                (215, 205, 185),
+                bull_bar,
                 border_radius=5
             )
             pygame.draw.rect(
-                self.screen, (180, 120, 75),
-                (640, card_y + 23,
-                 int(105 * item["bulls"] / total_digits), 10),
+                self.screen,
+                (180, 120, 75),
+                (
+                    640,
+                    card_y + 23,
+                    int(105 * item["bulls"] / total_digits),
+                    10
+                ),
                 border_radius=5
             )
 
             bull_text = self.small_font.render(
-                str(item["bulls"]), True, (145, 90, 55)
+                str(item["bulls"]),
+                True,
+                (145, 90, 55)
             )
             self.screen.blit(bull_text, (750, card_y + 17))
-            
-        self.screen.set_clip(None)
 
+        self.screen.set_clip(None)
 
         # Input area
         if not self.game.game_over:
             pygame.draw.rect(
                 self.screen,
-                (250, 242, 225),
+                self.card_color,
                 self.input_box,
                 border_radius=8
             )
@@ -522,7 +556,6 @@ class NumberMode:
 
         # Game-over screen
         if self.game.game_over:
-            # Final score
             score_text = self.text_font.render(
                 f"FINAL SCORE: {self.score}",
                 True,
