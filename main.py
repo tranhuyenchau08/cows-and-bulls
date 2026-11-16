@@ -79,13 +79,15 @@ word_mode = None
 
 input_username = ""
 input_password = ""
-active_input = "username"
+active_input = None
+show_password = False
 auth_message = ""
 auth_mode = "login"
 
 
 username_box = pygame.Rect(350, 220, 300, 50)
 password_box = pygame.Rect(350, 310, 300, 50)
+toggle_password_button = pygame.Rect(660, 310, 100, 50)
 submit_auth_button = pygame.Rect(350, 400, 300, 55)
 switch_auth_button = pygame.Rect(350, 470, 300, 45)
 
@@ -248,7 +250,8 @@ def draw_auth_screen(mouse_pos):
     screen.blit(u_label, (350, 195))
     u_color = (255, 255, 255) if active_input == "username" else (230, 230, 230)
     pygame.draw.rect(screen, u_color, username_box, border_radius=8)
-    pygame.draw.rect(screen, TEXT_COLOR, username_box, 2, border_radius=8)
+    u_border = (142, 170, 130) if active_input == "username" else (195, 170, 140)
+    pygame.draw.rect(screen, u_border, username_box, 3 if active_input == "username" else 2, border_radius=8)
     u_surface = input_font.render(input_username, True, TEXT_COLOR)
     u_rect = u_surface.get_rect(
         midleft=(username_box.x + 10, username_box.centery)
@@ -261,12 +264,18 @@ def draw_auth_screen(mouse_pos):
     screen.blit(p_label, (350, 285))
     p_color = (255, 255, 255) if active_input == "password" else (230, 230, 230)
     pygame.draw.rect(screen, p_color, password_box, border_radius=8)
-    pygame.draw.rect(screen, TEXT_COLOR, password_box, 2, border_radius=8)
-    p_surface = input_font.render("*" * len(input_password), True, TEXT_COLOR)
+    p_border = (142, 170, 130) if active_input == "password" else (195, 170, 140)
+    pygame.draw.rect(screen, p_border, password_box, 3 if active_input == "password" else 2, border_radius=8)
+    password_text = input_password if show_password else "*" * len(input_password)
+
+    p_surface = input_font.render(password_text, True, TEXT_COLOR)
     p_rect = p_surface.get_rect(
         midleft=(password_box.x + 10, password_box.centery)
     )
     screen.blit(p_surface, p_rect)
+
+    toggle_text = "HIDE" if show_password else "SHOW"
+    draw_button(toggle_password_button, toggle_text, mouse_pos)
     
 
     # Error / Success Message
@@ -678,7 +687,7 @@ def present_screen():
         get_display_geometry()
     )
 
-    window.fill(BACKGROUND)
+    window.fill((246, 237, 220))
 
     scaled_screen = pygame.transform.smoothscale(
         screen,
@@ -816,15 +825,27 @@ while running:
             if current_menu == "login":
                 if username_box.collidepoint(event.pos):
                     active_input = "username"
+
                 elif password_box.collidepoint(event.pos):
                     active_input = "password"
+
+                elif toggle_password_button.collidepoint(event.pos):
+                    show_password = not show_password
+
                 elif submit_auth_button.collidepoint(event.pos):
+                    active_input = None
                     sound_effects.play("click")
                     perform_auth()
+
                 elif switch_auth_button.collidepoint(event.pos):
+                    active_input = None
                     sound_effects.play("click")
                     auth_message = ""
                     current_menu = "welcome"
+
+                else:
+                    active_input = None
+
                 continue
 
 

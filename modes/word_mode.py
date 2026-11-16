@@ -16,27 +16,46 @@ class WordMode:
         self.score = 0
 
         # Fonts
-        self.title_font = pygame.font.SysFont("georgia", 48, bold=True)
+        self.title_font = pygame.font.SysFont("georgia", 52, bold=True)
         self.text_font = pygame.font.SysFont("consolas", 20)
         self.small_font = pygame.font.SysFont("consolas", 20)
         self.input_font = pygame.font.SysFont("consolas", 24)
         self.button_font = pygame.font.SysFont("consolas", 24, bold=True)
 
+        # Load Cow and Bull icons once
+        self.cow_icon = pygame.image.load(
+            "assets/cow_icon.png"
+        ).convert_alpha()
+
+        self.bull_icon = pygame.image.load(
+            "assets/bull_icon.png"
+        ).convert_alpha()
+
+        self.cow_icon = pygame.transform.smoothscale(
+            self.cow_icon, (24, 24)
+        )
+
+        self.bull_icon = pygame.transform.smoothscale(
+            self.bull_icon, (24, 24)
+        )
+
         # Colors
-        self.background = (245, 235, 210)
-        self.text_color = (50, 40, 30)
-        self.button_color = (120, 170, 100)
-        self.button_hover = (150, 200, 130)
-        self.input_hint_color = (145, 145, 145)
-        self.error_color = (180, 55, 45)
-        self.success_color = (45, 120, 55)
-        self.white = (255, 255, 255)
+        self.background = (246, 237, 220)
+        self.text_color = (75, 55, 40)
+        self.button_color = (145, 100, 65)
+        self.button_hover = (175, 125, 85)
+        self.input_hint_color = (155, 135, 110)
+        self.white = (255, 250, 240)
+
+        # Input styling
+        self.input_border = (195, 170, 140)
+        self.input_active_border = (142, 170, 130)
 
         # Input
         self.input_text = ""
         self.input_active = False
 
-        # Message
+        # Messages
         self.message = "Enter your guess and press ENTER."
         self.message_color = self.text_color
 
@@ -44,7 +63,7 @@ class WordMode:
         self.input_box = pygame.Rect(100, 445, 650, 52)
         self.submit_button = pygame.Rect(770, 445, 150, 52)
 
-        # Navigation
+        # Navigation button
         self.back_button = pygame.Rect(35, 615, 180, 50)
 
         # Game-over buttons
@@ -52,7 +71,10 @@ class WordMode:
         self.change_button = pygame.Rect(375, 480, 250, 55)
         self.menu_button = pygame.Rect(675, 480, 250, 55)
 
-    
+        # Guess history scrolling
+        self.history_area = pygame.Rect(160, 145, 680, 285)
+        self.history_scroll = 0
+
     def calculate_score(self, won):
         if not won:
             return 0
@@ -74,14 +96,17 @@ class WordMode:
         base_score = base_scores.get(difficulty, 100)
         total_turns = max_turns.get(difficulty, 10)
 
-        turns_left = max(0, getattr(self.game, "attempts_left", 0))
+        turns_left = max(
+            0,
+            getattr(self.game, "attempts_left", 0)
+        )
+
         turns_left = min(turns_left, total_turns)
 
         bonus = round(turns_left / total_turns * 100)
 
         return base_score + bonus
 
-    
     def save_finished_game(self, won):
         if self.result_saved:
             return
@@ -108,19 +133,13 @@ class WordMode:
 
         self.result_saved = True
 
-
-
     @staticmethod
     def format_result(bulls, cows):
         bull_word = "Bull" if bulls == 1 else "Bulls"
         cow_word = "Cow" if cows == 1 else "Cows"
+
         return f"{bulls} {bull_word}, {cows} {cow_word}"
 
-    def reset_message(self):
-        self.message = "Enter your guess and press ENTER."
-        self.message_color = self.text_color
-
-    
     def submit_guess(self):
         if self.game.is_game_over:
             return
@@ -130,27 +149,40 @@ class WordMode:
         if not guess:
             sound_effects.play("wrong")
             self.message = "Please enter a word."
-            self.message_color = self.error_color
+            self.message_color = self.text_color
             return
 
         result = self.game.check_guess(guess)
-
-        # Clear the input after submitting
         self.input_text = ""
 
         # Handle invalid guesses returned as a tuple
         if isinstance(result, tuple):
             sound_effects.play("wrong")
             self.message = str(result[1])
-            self.message_color = self.error_color
+            self.message_color = (180, 55, 45)
             return
 
         # Handle invalid guesses returned as a dictionary
         if result.get("status") == "error":
             sound_effects.play("wrong")
-            self.message = result.get("message", "Invalid guess.")
-            self.message_color = self.error_color
+            self.message = result.get(
+                "message", "Invalid guess."
+            )
+            self.message_color = (180, 55, 45)
             return
+
+        # Automatically scroll to the latest guess
+        card_height = 58
+        card_spacing = 8
+
+        content_height = len(self.game.history) * (
+            card_height + card_spacing
+        )
+
+        self.history_scroll = max(
+            0,
+            content_height - self.history_area.height
+        )
 
         bulls = result["bulls"]
         cows = result["cows"]
@@ -163,50 +195,91 @@ class WordMode:
 
         if result.get("won") or result.get("status") == "win":
             sound_effects.play("win")
-            self.message = f"YOU WIN! Answer: {self.game.secret_word}"
-            self.message_color = self.success_color
+            self.message = (
+                f"YOU WIN! Answer: {self.game.secret_word}"
+            )
+            self.message_color = (45, 120, 55)
 
-            # Save result when the player wins
             self.save_finished_game(True)
 
         elif result.get("status") == "lose":
             sound_effects.play("lose")
-            self.message = f"GAME OVER! Answer: {self.game.secret_word}"
-            self.message_color = self.error_color
+            self.message = (
+                f"GAME OVER! Answer: {self.game.secret_word}"
+            )
+            self.message_color = (180, 55, 45)
 
-        # Save result when the player loses
             self.save_finished_game(False)
 
         else:
             sound_effects.play("click")
 
     def handle_events(self, event):
+        # Scroll guess history with mouse wheel
+        if event.type == pygame.MOUSEWHEEL:
+            if self.history_area.collidepoint(
+                pygame.mouse.get_pos()
+            ):
+                card_height = 58
+                card_spacing = 8
+
+                content_height = len(self.game.history) * (
+                    card_height + card_spacing
+                )
+
+                max_scroll = max(
+                    0,
+                    content_height - self.history_area.height
+                )
+
+                self.history_scroll -= event.y * 30
+
+                self.history_scroll = max(
+                    0,
+                    min(self.history_scroll, max_scroll)
+                )
+
+        # Keyboard input
         if event.type == pygame.KEYDOWN:
-            if self.game.is_game_over or not self.input_active:
+            if self.game.is_game_over:
                 return None
 
             if event.key == pygame.K_RETURN:
-                self.submit_guess()
+                if self.input_active:
+                    self.submit_guess()
 
             elif event.key == pygame.K_BACKSPACE:
-                self.input_text = self.input_text[:-1]
+                if self.input_active:
+                    self.input_text = self.input_text[:-1]
 
             elif event.unicode.isalpha():
-                if len(self.input_text) < self.game.word_length:
+                if (
+                    self.input_active
+                    and len(self.input_text) < self.game.word_length
+                ):
                     self.input_text += event.unicode.upper()
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        # Mouse input
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button != 1:
+                return None
+
             if self.game.is_game_over:
                 if self.replay_button.collidepoint(event.pos):
                     self.game.reset()
+                    self.history_scroll = 0
 
-                    #Reset score tracking for the new game
+                    # Reset score tracking for the new game
                     self.result_saved = False
                     self.score = 0
 
                     self.input_text = ""
                     self.input_active = False
-                    self.reset_message()
+                    self.message = (
+                        "Enter your guess and press ENTER."
+                    )
+                    self.message_color = self.text_color
+
                     sound_effects.play("click")
 
                 elif self.change_button.collidepoint(event.pos):
@@ -251,7 +324,7 @@ class WordMode:
         label = self.button_font.render(
             text,
             True,
-            self.text_color
+            (255, 250, 240)
         )
 
         self.screen.blit(
@@ -262,8 +335,7 @@ class WordMode:
     def draw(self, mouse_pos=None):
         self.screen.fill(self.background)
 
-        # Use the logical canvas mouse position supplied by main.py.
-        # The fallback avoids incorrect hover effects if called independently.
+        # Mouse coordinates in canvas space
         if mouse_pos is None:
             mouse_pos = (-1, -1)
 
@@ -271,7 +343,7 @@ class WordMode:
         title = self.title_font.render(
             "WORD MODE",
             True,
-            self.text_color
+            (100, 65, 45)
         )
 
         self.screen.blit(
@@ -298,44 +370,164 @@ class WordMode:
         )
 
         # Guess history
-        history_start_y = 145
-        history_spacing = 25
+        history_start_y = 155
+        card_height = 58
+        card_spacing = 8
 
-        for index, item in enumerate(self.game.history[-10:]):
-            line = (
-                f'{item["guess"]}  -  '
-                f'{self.format_result(item["bulls"], item["cows"])}'
+        self.screen.set_clip(self.history_area)
+
+        for index, item in enumerate(self.game.history):
+            card_y = (
+                history_start_y
+                + index * (card_height + card_spacing)
+                - self.history_scroll
             )
 
-            surface = self.small_font.render(
-                line,
+            # Guess card
+            card_rect = pygame.Rect(
+                180, card_y, 640, card_height
+            )
+
+            pygame.draw.rect(
+                self.screen,
+                (250, 242, 225),
+                card_rect,
+                border_radius=12
+            )
+
+            pygame.draw.rect(
+                self.screen,
+                (195, 170, 140),
+                card_rect,
+                width=2,
+                border_radius=12
+            )
+
+            # Guess number
+            guess_label = self.small_font.render(
+                f"GUESS #{index + 1}",
                 True,
-                self.text_color
+                (145, 100, 65)
             )
 
             self.screen.blit(
-                surface,
-                surface.get_rect(
-                    center=(
-                        500,
-                        history_start_y + index * history_spacing
-                    )
-                )
+                guess_label,
+                (200, card_y + 7)
             )
+
+            guess_text = self.small_font.render(
+                str(item["guess"]),
+                True,
+                (95, 65, 45)
+            )
+
+            self.screen.blit(
+                guess_text,
+                (200, card_y + 27)
+            )
+
+            # Cow and Bull progress bars
+            total_letters = max(1, len(str(item["guess"])))
+
+            # Cow progress bar
+            self.screen.blit(
+                self.cow_icon,
+                (430, card_y + 17)
+            )
+
+            cow_bar = pygame.Rect(
+                460, card_y + 23, 105, 10
+            )
+
+            pygame.draw.rect(
+                self.screen,
+                (215, 205, 185),
+                cow_bar,
+                border_radius=5
+            )
+
+            pygame.draw.rect(
+                self.screen,
+                (155, 175, 125),
+                (
+                    460,
+                    card_y + 23,
+                    int(
+                        105 * item["cows"] / total_letters
+                    ),
+                    10
+                ),
+                border_radius=5
+            )
+
+            cow_text = self.small_font.render(
+                str(item["cows"]),
+                True,
+                (95, 120, 75)
+            )
+
+            self.screen.blit(
+                cow_text,
+                (570, card_y + 17)
+            )
+
+            # Bull progress bar
+            self.screen.blit(
+                self.bull_icon,
+                (610, card_y + 17)
+            )
+
+            bull_bar = pygame.Rect(
+                640, card_y + 23, 105, 10
+            )
+
+            pygame.draw.rect(
+                self.screen,
+                (215, 205, 185),
+                bull_bar,
+                border_radius=5
+            )
+
+            pygame.draw.rect(
+                self.screen,
+                (180, 120, 75),
+                (
+                    640,
+                    card_y + 23,
+                    int(
+                        105 * item["bulls"] / total_letters
+                    ),
+                    10
+                ),
+                border_radius=5
+            )
+
+            bull_text = self.small_font.render(
+                str(item["bulls"]),
+                True,
+                (145, 90, 55)
+            )
+
+            self.screen.blit(
+                bull_text,
+                (750, card_y + 17)
+            )
+
+        self.screen.set_clip(None)
 
         # Input area
         if not self.game.is_game_over:
             pygame.draw.rect(
                 self.screen,
-                self.white,
+                (250, 242, 225),
                 self.input_box,
                 border_radius=8
             )
 
             border_color = (
-                self.button_color
+                self.input_active_border
                 if self.input_active
-                else self.text_color
+                else self.input_border
             )
 
             pygame.draw.rect(
@@ -376,7 +568,9 @@ class WordMode:
             )
 
         # Status message
-        message_y = 425 if self.game.is_game_over else 535
+        message_y = (
+            390 if self.game.is_game_over else 535
+        )
 
         message = self.small_font.render(
             self.message,
@@ -384,18 +578,20 @@ class WordMode:
             self.message_color
         )
 
-        self.screen.blit(
-            message,
-            message.get_rect(center=(500, message_y))
+        message_rect = message.get_rect(
+            center=(500, message_y)
         )
+
+        self.screen.blit(message, message_rect)
 
         # Game-over screen
         if self.game.is_game_over:
-            # Final score
             score_text = self.text_font.render(
                 f"FINAL SCORE: {self.score}",
                 True,
-                self.success_color if self.game.won else self.text_color
+                (125, 100, 75)
+                if self.game.won
+                else self.text_color
             )
 
             self.screen.blit(
