@@ -597,7 +597,7 @@ class WordMode:
         if self.game.is_game_over:
             score_color = (
                 (125, 100, 75)
-                if self.game.won
+                if self.game.is_win
                 else self.text_color
             )
 
