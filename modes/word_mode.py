@@ -86,9 +86,9 @@ class WordMode:
         self.back_button = pygame.Rect(35, 615, 180, 50)
 
         # Game-over buttons
-        self.replay_button = pygame.Rect(75, 480, 250, 55)
-        self.change_button = pygame.Rect(375, 480, 250, 55)
-        self.menu_button = pygame.Rect(675, 480, 250, 55)
+        self.replay_button = pygame.Rect(75, 550, 250, 55)
+        self.change_button = pygame.Rect(375, 550, 250, 55)
+        self.menu_button = pygame.Rect(675, 550, 250, 55)
 
         # Guess history scrolling
         self.history_area = pygame.Rect(160, 145, 680, 285)
@@ -578,7 +578,7 @@ class WordMode:
 
         # Status message
         message_y = (
-            390 if self.game.is_game_over else 535
+            455 if self.game.is_game_over else 535
         )
 
         message = self.small_font.render(
@@ -609,7 +609,7 @@ class WordMode:
 
             self.screen.blit(
                 score_text,
-                score_text.get_rect(center=(500, 435))
+                score_text.get_rect(center=(500, 495))
             )
 
             self.draw_button(
