@@ -13,62 +13,57 @@ A number guessing game built with Python and Pygame.
 
 ## Requirements
 
-- Python 3.12 (for running from source)
+- Python 3.12
 - Pygame
-- Other dependencies listed in `requirements.txt`, if available
+- Other dependencies listed in requirements.txt, if available
 
 ## Run from source
 
-Clone or download the project, then open a terminal in the project folder:
+1. Open the project folder.
+2. Open PowerShell or Command Prompt.
+3. Install the required packages by running:
 
-```bash
 pip install -r requirements.txt
-python main.py
-```
 
-If `requirements.txt` has not been created yet, install the required packages manually.
+4. Start the game:
+
+python main.py
+
+If requirements.txt does not exist, install the required packages manually.
 
 ## Run the Windows application
 
-After building with PyInstaller, open:
+After building the application, open:
 
-```text
 dist/CowsAndBulls/CowsAndBulls.exe
-```
 
-Keep the other files and folders inside `dist/CowsAndBulls` together with the executable.
+Keep all supporting files and folders inside dist/CowsAndBulls together with the executable.
 
 ## Build the application
 
 Install PyInstaller:
 
-```bash
 pip install pyinstaller
-```
 
-Build:
+Build the application:
 
-```bash
 pyinstaller --noconfirm --clean --windowed --onedir --name CowsAndBulls main.py
-```
 
-The output will be in the `dist` folder.
+The output will be available in the dist folder.
 
 ## Project structure
 
-```text
 cows-and-bulls/
-├── main.py
-├── modes/
-│   ├── number_mode.py
-│   ├── word_mode.py
-│   └── ...
-├── README.md
-└── ...
-```
+- main.py
+- modes/
+  - number_mode.py
+  - word_mode.py
+  - other mode files
+- README.md
+- other project files
 
 ## Notes
 
 - Test the executable on Windows before sharing it.
-- Include required images, sounds, fonts, and data files in the packaged application.
-- Do not separate the executable from its supporting files when using the `onedir` build.
+- Include all required images, sounds, fonts, and data files in the packaged application.
+- Do not separate the executable from its supporting files when using the onedir build.

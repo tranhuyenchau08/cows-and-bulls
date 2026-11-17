@@ -4,9 +4,12 @@ from typing import Literal, Optional
 from datetime import datetime
 import json
 import os
+from pathlib import Path
 
 app = FastAPI(title="Cows & Bulls Leaderboard API")
-DATA_FILE = "leaderboard.json"
+
+DATA_DIR = Path(os.getenv("LOCALAPPDATA", Path.home())) / "CowsAndBulls"
+DATA_FILE = DATA_DIR / "leaderboard.json"
 
 # --- Schemas nhận dữ liệu từ Client ---
 class MatchResult(BaseModel):
@@ -40,6 +43,8 @@ def load_data() -> dict:
             return default_structure
 
 def save_data(data: dict):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 

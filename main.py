@@ -5,6 +5,7 @@ from modes.number_mode import NumberMode
 from modes.word_mode import WordMode
 from modes.effects import sound_effects
 from modes.stats import stats_manager
+from modes.server import start_api_server
 
 pygame.init()
 
@@ -1409,6 +1410,11 @@ def start_game(difficulty):
 # =========================
 # MAIN LOOP
 # =========================
+
+# Start API server automatically
+if not start_api_server():
+    print("Warning: API server could not be started!")
+
 
 running = True
 
