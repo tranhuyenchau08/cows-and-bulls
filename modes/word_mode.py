@@ -149,6 +149,7 @@ class WordMode:
         stats_manager.submit_score_server(
             player_name=self.username,
             mode="word",
+            difficulty=self.difficulty,
             result="win" if won else "loss",
             target=str(self.game.secret_word),
             attempts=len(self.game.history),

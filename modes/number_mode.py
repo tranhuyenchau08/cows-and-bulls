@@ -153,6 +153,7 @@ class NumberMode:
         stats_manager.submit_score_server(
             player_name=self.username,
             mode="number",
+            difficulty=self.difficulty,
             result="win" if won else "loss",
             target=str(self.game.secret),
             attempts=len(self.game.history),

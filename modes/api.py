@@ -14,11 +14,12 @@ DATA_FILE = DATA_DIR / "leaderboard.json"
 # --- Schemas nhận dữ liệu từ Client ---
 class MatchResult(BaseModel):
     player_name: str
-    mode: Literal["number", "word"]  # Chỉ nhận 1 trong 2 chế độ
+    mode: Literal["number", "word"]
+    difficulty: str
     result: Literal["win", "loss"]
-    target: str                     # Đáp án (ví dụ: "4821" hoặc "PYTHON")
-    attempts: int                   # Số lượt đoán
-    score: int                      # Điểm đạt được trong lượt chơi này
+    target: str
+    attempts: int
+    score: int                    # Điểm đạt được trong lượt chơi này
 
 class UserAuth(BaseModel):
     username: str
@@ -141,13 +142,14 @@ def submit_score(data: MatchResult):
         
     # 3. Thêm bản ghi vào lịch sử (giữ tối đa 20 trận gần nhất)
     history_item = {
-        "mode": data.mode,
-        "result": data.result,
-        "target": data.target,
-        "attempts": data.attempts,
-        "score": data.score,
-        "played_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
+    "mode": data.mode,
+    "difficulty": data.difficulty,
+    "result": data.result,
+    "target": data.target,
+    "attempts": data.attempts,
+    "score": data.score,
+    "played_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+}
 
     if "history" not in player:
         player["history"] = []

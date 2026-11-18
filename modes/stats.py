@@ -242,7 +242,7 @@ class StatsManager:
         
 
     def submit_score_server(
-        self, player_name, mode, result, target, attempts, score
+        self, player_name, mode, difficulty, result, target, attempts, score
     ):
         try:
             response = requests.post(
@@ -250,6 +250,7 @@ class StatsManager:
                 json={
                     "player_name": player_name,
                     "mode": mode,
+                    "difficulty": difficulty,
                     "result": result,
                     "target": str(target),
                     "attempts": attempts,
